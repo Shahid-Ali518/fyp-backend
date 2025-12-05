@@ -6,9 +6,9 @@ class TestCategoryBase(BaseModel):
     description: Optional[str] = None
 
 
-class TestCategoryCreate(TestCategoryBase):
-    pass
-
+class TestCategoryCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
 
 class TestCategoryUpdate(BaseModel):
     name: Optional[str] = None
