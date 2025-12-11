@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from core.database import get_db
 from service.question_service import QuestionService
+from utils.response import Response
 
 router = APIRouter(prefix="/questions", tags=["Questions"])
 
@@ -15,6 +16,7 @@ async def create_question(
     text: str = Form(...),
     db: Session = Depends(get_db)
 ):
+    response = Response()
     try:
         data = {
             "text": text,
@@ -22,6 +24,7 @@ async def create_question(
         }
 
         return question_service.create_question(db, data)
+
     except Exception as e:
         print(e)
 

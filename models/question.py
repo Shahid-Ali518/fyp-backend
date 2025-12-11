@@ -19,6 +19,7 @@ class Question(Base):
     id = Column(Integer, primary_key=True)
     category_id = Column(Integer, ForeignKey("test_categories.id", ondelete="CASCADE"))
     text = Column(Text, nullable=False)
+
     audio_bytes = Column(LargeBinary)
     created_at = Column(DateTime, default=datetime.utcnow)
 
