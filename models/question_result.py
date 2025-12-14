@@ -5,16 +5,28 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 from models.question import EmotionType
 
+
 class QuestionResult(Base):
     __tablename__ = "question_results"
 
     id = Column(Integer, primary_key=True)
+
+    # Foreign keys
     attempt_id = Column(Integer, ForeignKey("test_attempts.id", ondelete="CASCADE"))
     question_id = Column(Integer, ForeignKey("questions.id", ondelete="CASCADE"))
-    user_answer_audio = Column(LargeBinary)
-    user_answer_text = Column(Text, nullable=False)
-    recognized_emotion = Column(Enum(EmotionType))
+
+    # Store the selected option
+    selected_option_id = Column(Integer, ForeignKey("survey_options.id", ondelete="SET NULL"), nullable=True)
+
+    # Optional user input fields
+    user_answer_audio = Column(LargeBinary, nullable=True)
+    user_answer_text = Column(Text, nullable=True)
+
+    # Emotion and confidence (optional)
+    recognized_emotion = Column(Enum(EmotionType), nullable=True)
     confidence = Column(Float, default=0.0)
 
+    # Relationships
     attempt = relationship("TestAttempt", back_populates="question_results")
     question = relationship("Question", back_populates="results")
+    selected_option = relationship("SurveyOption")  # Link to the chosen option

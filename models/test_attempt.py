@@ -14,6 +14,7 @@ class TestAttempt(Base):
     overall_emotion = Column(Enum(EmotionType), nullable=True)
     attempt_date = Column(DateTime, default=datetime.utcnow)
 
+    # relationships
     user = relationship("User", back_populates="attempts")
     category = relationship("TestCategory", back_populates="attempts")
     question_results = relationship("QuestionResult", back_populates="attempt", cascade="all, delete")

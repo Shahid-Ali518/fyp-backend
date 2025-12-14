@@ -1,18 +1,24 @@
 
-from sqlalchemy import Column, Integer, ForeignKey, Float, false, Enum
+from sqlalchemy import Column, Integer, ForeignKey, Float,Text
 from sqlalchemy.orm import relationship
 
 from core.database import Base
 
-from utils.constants import Options
 
 
 class SurveyOption(Base):
     __tablename__ = "survey_options"
 
     id = Column(Integer, primary_key=True)
-    question_id = Column(Integer, ForeignKey("questions.id"), nullable=False)
-    option_text = Column(Enum(Options), default=Options.neutral, nullable=False)  # e.g. "Neutral", "Low", "High"
+
+    # test category may contain number of options to select
+    category_id = Column( Integer,ForeignKey("test_categories.id", ondelete="CASCADE"),nullable=False)
+
+    # option text like, mild, moderate, ...
+    option_text = Column(Text, nullable=False)  # e.g. "Neutral", "Low", "High"
+
+    # weightage of option
     weightage = Column(Float, nullable=False)
 
-    question = relationship("Question", back_populates="survey_options")
+    # relationships
+    category = relationship("TestCategory", back_populates="options")

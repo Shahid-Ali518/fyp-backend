@@ -1,0 +1,14 @@
+# schemas/assessment_class_range_schema.py
+from pydantic import BaseModel
+from typing import Optional
+
+class AssessmentClassRangeDTO(BaseModel):
+    id: Optional[int] = None
+    category_id: int
+    label: str
+    min_score: int
+    max_score: int
+    recommendation: Optional[str] = None
+
+    class Config:
+        from_attributes = True

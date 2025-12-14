@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from models.survey_option import SurveyOption
 from utils.constants import Options, OPTION_KEYWORDS, OPTION_WEIGHTAGE
-from utils.response import Response
+from utils.api_response import Response
 
 
 class OptionBasedSurveyService():

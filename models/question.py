@@ -25,3 +25,4 @@ class Question(Base):
 
     category = relationship("TestCategory", back_populates="questions")
     results = relationship("QuestionResult", back_populates="question", cascade="all, delete")
+    survey_options = relationship("SurveyOption", back_populates="question", cascade="all, delete")

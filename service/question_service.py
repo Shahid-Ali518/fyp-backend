@@ -1,53 +1,52 @@
 import io
-from wsgiref.util import request_uri
 
 import PyPDF2
 from fastapi import UploadFile, File
 
 from sqlalchemy.orm import Session
 from models.question import Question
-from schemas.question import QuestionCreate, QuestionUpdate
-from utils import tts_converter, response
-from utils.response import Response
+from schemas.question_schema import QuestionDTO
+from utils.api_response import ApiResponse
 from utils.tts_converter import text_to_audio_bytes
 
 
 class QuestionService:
 
-    # add only one question
-    def create_question(self, db: Session, data: dict):
-        response = Response()
+    # add only one question ==================================
+    def create_question(self, db: Session, dto : QuestionDTO):
+        response = ApiResponse()
 
         try:
-           text = data.get("text")
+           text = dto.text
 
            # Convert text to audio (bytes)
            audio_bytes = text_to_audio_bytes(text)
            # print(audio_bytes)
            print("here audio bytes are generated")
-           data["audio_bytes"] = audio_bytes
 
-           question = Question(**data)
+
+           question = Question(text = dto.text, category_id = dto.category_id, audio_bytes = audio_bytes)
            db.add(question)
            db.commit()
            db.refresh(question)
+           response.message = "Question created"
+           response.status_code = 201
 
         except Exception as e:
             print(e)
+            db.rollback()
             response.message = "Exception occurred while creating question"
             response.status_code = 500
 
-        response.status_code = 201
-        response.message = "Question created successfully"
         return response
 
-    # add number of questions with pdf, docs file
+    # add number of questions with pdf, docs file  ===================================================================
     async def add_questions_by_file(self, db: Session, category_id: int,  file: UploadFile = File(...)):
-        response = Response()
+        response = ApiResponse()
         category_id = category_id
 
         # check file extension
-        if not file.filename.lower().endswith(".pdf") or not file.filename.lower().endswith(".docx"):
+        if not file.filename.lower().endswith(".pdf") or file.filename.lower().endswith(".docx"):
             response.message = "Please upload a PDF of docx file"
             response.status_code = 204 # bad request
             return response
@@ -89,22 +88,25 @@ class QuestionService:
         return response
 
 
-    # method to fetch all questions in db
+    # method to fetch all questions in db ========================================
     def get_all_questions(self, db: Session):
-        response = Response()
+        response = ApiResponse()
         try:
             questions = db.query(Question).all()
-            response.questions = questions
+            response.data = questions
             response.message = "Questions retrieved successfully"
             response.status_code = 200
 
         except Exception as e:
             print(e)
+            db.rollback()
             response.message = "Exception occurred while retrieving questions"
             response.status_code = 500
+
         return response
 
     def get_question(self, db: Session, question_id: int):
+        response = ApiResponse()
         try:
             question = db.query(Question).get(question_id)
             response.question = question
@@ -120,6 +122,7 @@ class QuestionService:
 
     # method to get all questions owned by one category ============================
     def get_questions_by_category(self, db: Session, category_id: int):
+        response = ApiResponse()
         try:
             questions = db.query(Question).filter_by(category_id=category_id).all()
             response.questions = questions
@@ -134,29 +137,39 @@ class QuestionService:
         return response
 
     # method to update question =======================================================
-    def update_question(self, db: Session, question_id: int, data: QuestionUpdate):
+    def update_question(self, db: Session, question_id: int, dto: QuestionDTO):
+        response = ApiResponse()
         try:
             question = self.get_question(db, question_id)
             if not question:
-                return None
+                response.status_code = 404
+                response.message = "Question not found"
+                return response
 
-            for key, value in data.dict(exclude_unset=True).items():
-                setattr(question, key, value)
+            if dto.text is not None:
+                question.text = dto.text
+                question.audio_bytes = text_to_audio_bytes(dto.text)
+
+            if dto.category_id is not None:
+                question.category_id = dto.category_id
 
             db.commit()
             db.refresh(question)
-            response.message = "Question updated successfully"
-            response.status_code = 201
+
+            response.data = QuestionDTO.model_validate(question)
+            response.message = "Question updated"
+            response.status_code = 200
 
         except Exception as e:
-            print(e)
-            response.message = "Exception occurred while updating question"
+            db.rollback()
+            response.message = str(e)
             response.status_code = 500
 
         return response
 
     # method to delete question =================================
     def delete_question(self, db: Session, question_id: int):
+        response = ApiResponse()
         try:
             question = self.get_question(db, question_id)
             if not question:
@@ -169,6 +182,7 @@ class QuestionService:
 
         except Exception as e:
             print(e)
+            db.rollback()
             response.message = "Exception occurred while deleting question"
             response.status_code = 500
 

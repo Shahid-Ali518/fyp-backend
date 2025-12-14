@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from core.database import get_db
+from schemas.question_schema import QuestionDTO
 from service.question_service import QuestionService
-from utils.response import Response
+from utils.api_response import Response
 
 router = APIRouter(prefix="/questions", tags=["Questions"])
 
@@ -12,18 +13,14 @@ question_service = QuestionService()
 
 @router.post("/")
 async def create_question(
-    category_id: int = Form(...),
-    text: str = Form(...),
+    dto: QuestionDTO = Form(...),
     db: Session = Depends(get_db)
 ):
     response = Response()
     try:
-        data = {
-            "text": text,
-            "category_id": category_id,
-        }
 
-        return question_service.create_question(db, data)
+
+        return question_service.create_question(db, dto)
 
     except Exception as e:
         print(e)
@@ -47,8 +44,8 @@ def get_questions_by_category(category_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{question_id}")
-def update_question(question_id: int, data: dict, db: Session = Depends(get_db)):
-    updated = question_service.update_question(db, question_id, data)
+def update_question(question_id: int, dto: QuestionDTO, db: Session = Depends(get_db)):
+    updated = question_service.update_question(db, question_id, dto)
     if not updated:
         raise HTTPException(status_code=404, detail="Question not found")
     return updated
