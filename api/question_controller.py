@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from core.database import get_db
 from schemas.question_schema import QuestionDTO
 from service.question_service import QuestionService
-from utils.api_response import Response
+from utils.api_response import ApiResponse
 
 router = APIRouter(prefix="/questions", tags=["Questions"])
 
@@ -16,7 +16,7 @@ async def create_question(
     dto: QuestionDTO = Form(...),
     db: Session = Depends(get_db)
 ):
-    response = Response()
+    response = ApiResponse()
     try:
 
 
