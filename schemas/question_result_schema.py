@@ -1,5 +1,5 @@
 # schemas/question_result_schema.py
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from enum import Enum
 from datetime import datetime
@@ -22,5 +22,4 @@ class QuestionResultDTO(BaseModel):
     recognized_emotion: Optional[EmotionType] = None
     confidence: Optional[float] = 0.0
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

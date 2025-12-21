@@ -1,29 +1,30 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body
 from sqlalchemy.orm import Session
 
+import models
 from core.database import get_db
+from models import Question
 from schemas.question_schema import QuestionDTO
 from service.question_service import QuestionService
 from utils.api_response import ApiResponse
+
+from fastapi.responses import Response
 
 router = APIRouter(prefix="/questions", tags=["Questions"])
 
 question_service = QuestionService()
 
 
-@router.post("/")
-async def create_question(
-    dto: QuestionDTO = Form(...),
-    db: Session = Depends(get_db)
-):
-    response = ApiResponse()
-    try:
+@router.post("/{category_id}/list", response_model=ApiResponse)
+def add_questions_to_category(category_id: int, questions: List[QuestionDTO], db: Session = Depends(get_db)):
+    return question_service.add_questions_to_category(db, category_id, questions)
 
 
-        return question_service.create_question(db, dto)
-
-    except Exception as e:
-        print(e)
+@router.post("/{category_id}/upload-pdf", response_model=ApiResponse)
+async def  add_questions_to_category(category_id: int, pdf: UploadFile = File(...), db: Session = Depends(get_db)):
+    return await question_service.add_questions_by_file(db, category_id, pdf)
 
 @router.get("/")
 def get_all_questions(db: Session = Depends(get_db)):
@@ -57,3 +58,17 @@ def delete_question(question_id: int, db: Session = Depends(get_db)):
     if not deleted:
         raise HTTPException(status_code=404, detail="Question not found")
     return {"message": "Question deleted successfully"}
+
+
+
+
+# utility controller to get audio of question
+@router.get("/{question_id}/audio")
+def get_question_audio(question_id: int, db: Session = Depends(get_db)):
+    question = db.query(Question).filter(Question.id == question_id).first()
+    print(question)
+    if not question or not question.audio_bytes:
+        raise HTTPException(status_code=404)
+
+    # Returns the raw bytes with the correct media type
+    return Response(content=question.audio_bytes, media_type="audio/mpeg")

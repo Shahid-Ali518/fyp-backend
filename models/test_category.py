@@ -8,6 +8,7 @@ class TestCategory(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(100), unique=True, nullable=False)
     description = Column(Text)
+    category_type = Column(String(100))
 
     # relationships
     questions = relationship("Question", back_populates="category", cascade="all, delete")

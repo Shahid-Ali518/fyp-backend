@@ -1,5 +1,5 @@
 # schemas/survey_option_schema.py
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class SurveyOptionDTO(BaseModel):
@@ -8,5 +8,4 @@ class SurveyOptionDTO(BaseModel):
     option_text: str
     weightage: float
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

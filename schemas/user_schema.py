@@ -1,5 +1,5 @@
 # schemas/user_schema.py
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -16,5 +16,4 @@ class UserDTO(BaseModel):
     role: Optional[UserRoleEnum] = UserRoleEnum.user
     created_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

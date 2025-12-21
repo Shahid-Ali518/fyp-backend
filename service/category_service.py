@@ -1,39 +1,73 @@
 from http.client import responses
 
+from fastapi import HTTPException
+from psycopg2.errors import UniqueViolation
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from models.test_category import TestCategory
 from schemas.test_category_schema import TestCategoryDTO
 from utils.api_response import ApiResponse
+from utils.dto_utils import map_TestCategoryListEntity_to_dtoList
 
 
 class TestCategoryService:
 
     # method to create a new category ================================
-    def create_category(self, data: dict, db: Session):
-        response = ApiResponse()
+    def create_category(self, category: TestCategoryDTO, db: Session):
+        response = ApiResponse(message="Success", status_code=201)
+        # check weather category name is already exist
+        exist = db.query(TestCategory).filter(TestCategory.name == category.name).first()
+        if exist:
+            raise HTTPException(status_code=400, detail="Test category already exists")
+
+        # perform insertion
         try:
-            category = TestCategory(**data)
-            db.add(category)
+            added_category = TestCategory(
+                name=category.name,
+                description=category.description,
+                category_type = category.category_type,
+            )
+            db.add(added_category)
             db.commit()
-            db.refresh(category)
+            db.refresh(added_category)
+
+            response_category = TestCategoryDTO(
+                id=added_category.id,
+                name=added_category.name,
+                description=added_category.description,
+                category_type=added_category.category_type,
+            )
+
             response.message = "Category created"
             response.status_code = 201
-        except Exception as e:
-            print(e)
-            response.status_code = 500
-            response.message = 'exception occurred while creating test category'
+            response.data = response_category
+
+        except IntegrityError as e:
+            db.rollback()
+
+            if isinstance(e.orig, UniqueViolation):
+                raise HTTPException(
+                    status_code=409,
+                    detail="A category with this name already exists."
+                )
+
+            raise HTTPException(
+                status_code=500,
+                detail="An unexpected error occurred while creating category."
+            )
 
         return response
 
 
     # method to fetch all categories ===========================
     def get_all_categories(self, db: Session):
-        response = ApiResponse()
+        response = ApiResponse(message="Success", status_code=201)
         try:
             categories = db.query(TestCategory).all()
             response.message = "successfully fetched all test categories"
             response.status_code = 200
             response.data = categories
+            print(categories)
         except Exception as e:
             print(e)
             response.status_code = 500
@@ -42,13 +76,38 @@ class TestCategoryService:
         return response
 
     # method to get a category by id ============================
-    def get_category(self, db: Session, category_id: int):
-        response = ApiResponse()
+    def get_category_by_id(self, db: Session, category_id: int):
+        response = ApiResponse(message="Success", status_code=201)
         try:
             category = db.query(TestCategory).get(category_id)
+            print(category)
             response.message = "successfully fetched test category"
             response.status_code = 200
-            response.category = category
+            response.data = category
+        except Exception as e:
+            print(e)
+            response.status_code = 500
+            response.message = 'exception occurred while fetching test category'
+
+        return response
+
+    # method to get category by category_type =================================
+
+    def get_category_by_type(self, db: Session, category_type: str):
+        response = ApiResponse(message="Success", status_code=201)
+        try:
+            categories = db.query(TestCategory).filter(TestCategory.category_type == category_type).all()
+
+            if not categories:
+                raise HTTPException(status_code=404, detail="Test category not found")
+
+            # dtos = map_TestCategoryListEntity_to_dtoList(categories)
+            dtos = [{"id": c.id, "name": c.name, "description": c.description} for c in categories]
+            response.data = dtos
+            response.message = "successfully fetched test category"
+            response.status_code = 200
+            response.data = dtos
+
         except Exception as e:
             print(e)
             response.status_code = 500
@@ -58,7 +117,7 @@ class TestCategoryService:
 
     # method to update a category ======================================================
     def update_category(self, db: Session, category_id: int, dto: TestCategoryDTO):
-        response = ApiResponse()
+        response = ApiResponse(message="Success", status_code=201)
         try:
             category = self.get_category(db, category_id)
             if not category:
@@ -101,10 +160,11 @@ class TestCategoryService:
 
     # method to delete a category ================================================
     def delete_category(self, db: Session, category_id: int):
-        response = ApiResponse()
+        response = ApiResponse(message="Success", status_code=201)
 
         try:
-            category = self.get_category(db, category_id)
+            category = db.query(TestCategory).filter(TestCategory.id == category_id).first()
+
             if not category:
                 return None
 
@@ -115,6 +175,7 @@ class TestCategoryService:
 
         except Exception as e:
             print(e)
+            db.rollback()
             response.status_code = 500
             response.message = 'exception occurred while updating test category'
 

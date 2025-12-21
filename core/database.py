@@ -42,8 +42,10 @@ def get_db():
 def create_tables():
     from models.user import User
     from models.test_category import TestCategory
+    from models.survey_option import SurveyOption
     from models.question import Question
     from models.test_attempt import TestAttempt
     from models.question_result import QuestionResult
+    from models.assessment_class_range import AssessmentClassRange
 
     Base.metadata.create_all(bind=engine)

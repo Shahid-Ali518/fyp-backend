@@ -1,5 +1,5 @@
 # schemas/test_attempt_schema.py
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
@@ -19,5 +19,4 @@ class TestAttemptDTO(BaseModel):
     # Optional nested DTOs for response
     question_results: Optional[List[QuestionResultDTO]] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
