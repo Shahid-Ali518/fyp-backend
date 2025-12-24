@@ -1,42 +1,29 @@
+# Environment files
 .env
-*.env
-# =========================
-# Python cache files
-# =========================
-__pycache__/
-*.pyc
-*.pyo
-
-# =========================
-# Virtual environments
-# =========================
-venv/
-.env/
 .env.*
 
-# =========================
-# IDE / OS files
-# =========================
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+
+# IDE / OS
 .vscode/
 .idea/
 .DS_Store
 
-# =========================
 # Logs
-# =========================
 *.log
 
-# =========================
-# Large AI / ML models
-# =========================
+# AI / ML models
 *.onnx
 *.pt
 *.pth
 *.h5
 
-# =========================
-# Data / temp files
-# =========================
+# Media / temp
 *.wav
 *.mp3
 *.tmp

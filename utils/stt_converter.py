@@ -1,23 +1,23 @@
 DEPRESSION_WEIGHTS = {
-    "sad": 0.45,
+    "sadness": 0.45,
     "disgust": 0.25,
     "fear": 0.15,
-    "angry": 0.15
+    "anger": 0.15
 }
 
 ANXIETY_WEIGHTS = {
     "fear": 0.45,
     "surprise": 0.25,
-    "angry": 0.20,
-    "sad": 0.10
+    "anger": 0.20,
+    "sadness": 0.10
 }
 
 def map_score_to_severity(score: float) -> str:
     if score <= 25:
-        return "low"
+        return 1
     elif score <= 45:
-        return "mild"
+        return 2
     elif score <= 65:
-        return "moderate"
+        return 3
     else:
-        return "high"
+        return 4

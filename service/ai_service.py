@@ -31,7 +31,8 @@ whisper_model = whisper.load_model("small")
 print("Loading text emotion model...")
 emotion_model = pipeline(
     "text-classification",
-    model="j-hartmann/emotion-english-distilroberta-base"
+    model="j-hartmann/emotion-english-distilroberta-base",
+    return_all_scores=True
 )
 
 print("Loading ONNX Voice Emotion Recognition model...")
@@ -48,6 +49,12 @@ VOICE_LABEL_MAP = {
     "Neutral": "neutral",
     "Calm": "neutral"
 }
+
+EMOTION_LABELS = [
+    "Anger", "Calm", "Disgust", "Fear",
+    "Happy", "Neutral", "Sad", "Surprised"
+]
+
 
 
 
@@ -77,11 +84,13 @@ def transcribe_file(path: str) -> str:
 # TEXT EMOTION + KEYWORD MATCHING
 # ---------------------------------------------------------
 
-def analyze_text(text: str, category_name: str, options_data: list):
+def analyze_text(text: str, category_name: str):
     """
     Analyze text emotions and compute severity based on test category.
+    Returns weighted score, severity, and model confidence.
     """
-
+    if not text.strip():
+        raise ValueError("Empty transcript detected from audio")
     # 1. Run emotion model (multi-label)
     emotion_results = emotion_model(text[:512])[0]
 
@@ -91,9 +100,14 @@ def analyze_text(text: str, category_name: str, options_data: list):
         for e in emotion_results
     }
 
+    # Convert scores to a confidence map
+    # emotion_confidence = {
+    #     e["label"]: float(e["score"])
+    #     for e in emotion_results
+    # }
+
     # 2. Select emotion weights by category
     category_name = category_name.lower()
-
     if category_name == "depression":
         emotion_weights = DEPRESSION_WEIGHTS
     elif category_name == "anxiety":
@@ -104,33 +118,42 @@ def analyze_text(text: str, category_name: str, options_data: list):
     # 3. Weighted emotion score
     weighted_score = 0.0
     used_emotions = {}
-
     for emotion, weight in emotion_weights.items():
         percent = emotion_percentages.get(emotion, 0.0)
         weighted_score += percent * weight
         used_emotions[emotion] = percent
 
-    # 4. Determine severity level
-    severity_level = map_score_to_severity(weighted_score)
+    # # 4. Determine severity level
+    # severity_level = map_score_to_severity(weighted_score)
 
-    # 5. Fetch severity weightage from SurveyOption
-    option_weight_map = {
-        opt["option_text"].lower(): opt["weightage"]
-        for opt in options_data
-    }
+    # # 5. Fetch severity weightage from SurveyOption
+    # option_weight_map = {
+    #     opt["option_text"].lower(): opt["weightage"]
+    #     for opt in options_data
+    # }
 
-    severity_weightage = option_weight_map.get(
-        severity_level,
-        min(option_weight_map.values())
-    )
+    # severity_weightage = option_weight_map.get(
+    #     severity_level,
+    #     min(option_weight_map.values())
+    # )
+
+    # # 6. Compute overall confidence (average of selected emotions)
+    # # You can also compute max or any other metric if preferred
+
+
+    # selected_emotions = emotion_weights.keys()
+    # confidences = [emotion_confidence.get(e, 0.0) for e in selected_emotions]
+    # overall_confidence = sum(confidences) / len(confidences) if confidences else 0.0
 
     return {
         "category": category_name,
         "emotion_breakdown": used_emotions,
         "weightage": round(weighted_score, 2),
-        "severity_level": severity_level,
-        "severity_weightage": severity_weightage
+        # "severity_level": severity_level,
+        # "severity_weightage": severity_weightage,
+        # "model_confidence": round(overall_confidence, 2)  # confidence between 0 and 1
     }
+
 
 
 
@@ -176,7 +199,6 @@ def softmax(x: np.ndarray):
 def analyze_voice_emotion(
     wav_path: str,
     category_name: str,
-    options_data: list[dict]
 ) -> dict:
     """
     Analyze voice emotions and compute severity based on test category.
@@ -225,24 +247,24 @@ def analyze_voice_emotion(
         used_emotions[emotion] = percent
 
     # 7. Severity level
-    severity_level = map_score_to_severity(weighted_score)
+    # severity_level = map_score_to_severity(weighted_score)
 
-    # 8. Fetch severity weightage from SurveyOption
-    option_weight_map = {
-        opt["option_text"].lower(): opt["weightage"]
-        for opt in options_data
-    }
+    # # 8. Fetch severity weightage from SurveyOption
+    # option_weight_map = {
+    #     opt["option_text"].lower(): opt["weightage"]
+    #     for opt in options_data
+    # }
 
-    severity_weightage = option_weight_map.get(
-        severity_level,
-        min(option_weight_map.values())
-    )
+    # severity_weightage = option_weight_map.get(
+    #     severity_level,
+    #     min(option_weight_map.values())
+    # )
 
     return {
         "category": category_name,
         "emotion_breakdown": used_emotions,
         "weightage": round(weighted_score, 2),
-        "severity_level": severity_level,
-        "severity_weightage": severity_weightage
+        # "severity_level": severity_level,
+        # "severity_weightage": severity_weightage
     }
 

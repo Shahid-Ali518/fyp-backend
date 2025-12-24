@@ -173,7 +173,7 @@ class QuestionService:
                 audio_bytes = text_to_audio_bytes(q_text)
                 question = Question(
                     category_id=category_id,
-                    text=q_text,
+                    text=q_text, 
                     audio_bytes=audio_bytes
                 )
                 questions.append(question)
