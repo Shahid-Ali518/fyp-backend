@@ -49,10 +49,9 @@ class AssessmentClassRangeService():
 
             self.db.add_all(all_ranges)
             self.db.commit()
-            self.db.refresh(all_ranges)
 
             response.message = "All ranges added"
-            response.status_code = status.HTTP_200_OK
+            response.status_code = status.HTTP_201_CREATED
 
 
         except Exception as e:

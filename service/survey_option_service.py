@@ -37,15 +37,16 @@ class SurveyOptionService:
 
             all_options = []
 
-            for option in options:
-                option.category_id = category_id
-                option.option_text = option.option_text
-                option.weightage = option.weightage
+            for dto in options:
+                option = SurveyOption(
+                    category_id=category_id,
+                    option_text=dto.option_text,
+                    weightage=dto.weightage
+                )
                 all_options.append(option)
 
             self.db.add_all(all_options)
             self.db.commit()
-            self.db.refresh(all_options)
 
             response.message = "All options added"
             response.status_code = status.HTTP_201_CREATED

@@ -4,7 +4,7 @@ from typing import Optional
 
 class AssessmentClassRangeDTO(BaseModel):
     id: Optional[int] = None
-    category_id: int
+    category_id: Optional[int] = None
     label: str
     min_score: int
     max_score: int

@@ -7,16 +7,21 @@ from enum import Enum
 # Reuse your EmotionType enum
 from models.question import EmotionType
 from schemas.question_result_schema import QuestionResultDTO
+from schemas.test_category_schema import TestCategoryDTO
+from schemas.user_schema import UserDTO
+
 
 class TestAttemptDTO(BaseModel):
     id: Optional[int] = None
-    user_id: int
-    category_id: int
+    user_id: Optional[int] = None
+    category_id: Optional[int] = None
     test_score: Optional[float] = 0.0
     overall_emotion: Optional[EmotionType] = None
     attempt_date: Optional[datetime] = None
 
     # Optional nested DTOs for response
     question_results: Optional[List[QuestionResultDTO]] = []
+    category: Optional[TestCategoryDTO] = None
+    user: Optional[UserDTO] = None
 
     model_config = ConfigDict(from_attributes=True)

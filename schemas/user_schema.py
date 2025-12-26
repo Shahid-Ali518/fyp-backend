@@ -16,4 +16,4 @@ class UserDTO(BaseModel):
     role: Optional[UserRoleEnum] = UserRoleEnum.user
     created_at: Optional[datetime] = None
 
-    model_config = ConfigDict(from_attributes=True)
+
