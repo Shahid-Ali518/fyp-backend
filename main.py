@@ -7,6 +7,7 @@ from api.category_controller import router as category_router
 from api.question_controller import router as question_router
 from utils.cors import allow_frontend_origin
 from api.transcribe_router import router as transcribe_router
+from api.testAttempt_controller import router as test_attempt_router
 
 app = FastAPI()
 
@@ -36,3 +37,4 @@ def read_root():
 app.include_router(question_router)
 app.include_router(category_router)
 app.include_router(transcribe_router)
+app.include_router(test_attempt_router)

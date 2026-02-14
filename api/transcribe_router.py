@@ -19,18 +19,6 @@ from utils.stt_converter import map_score_to_severity
 
 router = APIRouter(prefix="/api/transcribe", tags=["transcribe"])
 
-# ThreadPoolExecutor for CPU-bound tasks (AI processing)
-# executor = ThreadPoolExecutor(max_workers=4)
-
-
-# def run_in_thread(func, *args):
-#     """
-#     Run CPU-bound functions in a thread pool (sync-safe).
-#     """
-#     loop = asyncio.new_event_loop()
-#     asyncio.set_event_loop(loop)
-#     return loop.run_in_executor(executor, lambda: func(*args))
-
 
 @router.post("/")
 def handle_transcription(
@@ -70,16 +58,7 @@ def handle_transcription(
 
 
         category_name = question.category.name  # depression / anxiety
-        # survey_options = question.category.options
         print("Question category:", category_name)
-        # options_data = [
-        #     {
-        #         "option_text": option.option_text,
-        #         "weightage": option.weightage
-        #     }
-        #     for option in survey_options
-        # ]
-
         text_result = analyze_text(transcript, category_name)
         print("TEXT RESULT:", text_result, type(text_result))
 
@@ -91,39 +70,15 @@ def handle_transcription(
             (voice_result["weightage"] * 0.4),
             2
         )
+        print(f"final severit: {final_weightage}")
         final_severity = map_score_to_severity(final_weightage)
 
-
-        #  # # 5. Fetch severity weightage from SurveyOption
-        # option_weight_map = {
-        #     opt["option_text"].lower(): opt["weightage"]
-        #     for opt in options_data
-        # }
-
-        # severity_weightage = option_weight_map.get(
-        #     final_severity,
-        #     min(option_weight_map.values())
-        # )
-
-
-        # selected_option = min(
-        #     survey_options,
-        #     key=lambda opt: abs(opt.weightage - final_weightage)
-        # )
-        # recognized_emotion = text_result["emotion_breakdown"]
-        # confidence = text_result["model_confidence"]
 
         # 7. Build response
         result = {
             "transcript": transcript,
-
             "text_emotion": text_result["emotion_breakdown"],
-            # "text_confidence": text_result["model_confidence"],
-            
             "voice_emotion": voice_result["emotion_breakdown"],
-            # "voice_confidence": voice_result["voice_emotion_confidence"],
-
-            # "selected_option_id": selected_option.id,
             "final_weightage": final_severity
         }
 
@@ -132,11 +87,8 @@ def handle_transcription(
        
         question_result = QuestionResult(
             question_id=question.id,
-            # selected_option_id=selected_option.id,
             user_answer_audio=audio_bytes,
             user_answer_text=transcript,
-            # recognized_emotion=recognized_emotion,
-            # confidence=confidence
         )
 
         db.add(question_result)

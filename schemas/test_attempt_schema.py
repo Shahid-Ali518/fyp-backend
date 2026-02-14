@@ -4,19 +4,18 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
-# Reuse your EmotionType enum
-from models.question import EmotionType
+
 from schemas.question_result_schema import QuestionResultDTO
+from models.test_level import TestLevel
+
 
 class TestAttemptDTO(BaseModel):
     id: Optional[int] = None
-    user_id: int
+    user_id: Optional[int] = None
     category_id: int
     test_score: Optional[float] = 0.0
-    overall_emotion: Optional[EmotionType] = None
+    test_level: Optional[TestLevel] = None
     attempt_date: Optional[datetime] = None
 
-    # Optional nested DTOs for response
-    question_results: Optional[List[QuestionResultDTO]] = []
-
     model_config = ConfigDict(from_attributes=True)
+
