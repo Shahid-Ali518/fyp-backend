@@ -45,7 +45,7 @@ VOICE_LABEL_MAP = {
     "Fear": "fear",
     "Sad": "sadness",
     "Surprised": "surprise",
-    "Happy": "happy",
+    "Happy": "joy",
     "Neutral": "neutral",
     "Calm": "neutral"
 }
@@ -76,32 +76,46 @@ def convert_to_wav(src_path: str, out_path: str):
 # SPEECH-TO-TEXT (Whisper)
 # ---------------------------------------------------------
 def transcribe_file(path: str) -> str:
-    result = whisper_model.transcribe(path, language="en")
-    return result.get("text", "").strip()
+    try:
+        result = whisper_model.transcribe(
+            path,
+            fp16=False,
+            language=None,
+            temperature=0.0  # more deterministic
+        )
+        text = result.get("text", "").strip()
+
+        if not text:
+            raise ValueError("Whisper returned empty transcript")
+
+        return text
+
+    except Exception as e:
+        raise RuntimeError(f"Speech-to-text failed: {str(e)}")
+
 
 
 # ---------------------------------------------------------
 # TEXT EMOTION + KEYWORD MATCHING
 # ---------------------------------------------------------
 
-def analyze_text(text: str, category_name: str):
-    """
-    Analyze text emotions and compute severity based on test category.
-    Returns weighted score, severity, and model confidence.
-    """
+def analyze_text(text: str, category_name: str) -> dict:
     if not text.strip():
         raise ValueError("Empty transcript detected from audio")
-    # 1. Run emotion model (multi-label)
-    emotion_results = emotion_model(text[:512])[0]
 
-    # Convert to percentage map
+    try:
+        emotion_results = emotion_model(text[:512])[0]
+    except Exception as e:
+        raise RuntimeError(f"Text emotion model failed: {str(e)}")
+
+    # Normalize labels to lowercase
     emotion_percentages = {
-        e["label"]: float(e["score"]) * 100
+        e["label"].lower(): float(e["score"]) * 100
         for e in emotion_results
     }
 
-    # 2. Select emotion weights by category
     category_name = category_name.lower()
+
     if category_name == "depression":
         emotion_weights = DEPRESSION_WEIGHTS
     elif category_name == "anxiety":
@@ -109,15 +123,13 @@ def analyze_text(text: str, category_name: str):
     else:
         raise ValueError("Unsupported test category")
 
-    # 3. Weighted emotion score
     weighted_score = 0.0
     used_emotions = {}
+
     for emotion, weight in emotion_weights.items():
-        percent = emotion_percentages.get(emotion, 0.0)
+        percent = emotion_percentages.get(emotion.lower(), 0.0)
         weighted_score += percent * weight
         used_emotions[emotion] = percent
-
-
 
     return {
         "category": category_name,
@@ -125,44 +137,6 @@ def analyze_text(text: str, category_name: str):
         "weightage": round(weighted_score, 2),
     }
 
-
-
-
-# ---------------------------------------------------------
-# PURE PYTHON SILENCE REMOVAL (NO webrtcvad)
-# ---------------------------------------------------------
-def remove_silence_librosa(y: np.ndarray):
-    """Remove leading and trailing silence using librosa only."""
-    y_trimmed, _ = librosa.effects.trim(y, top_db=30)
-    return y_trimmed
-
-
-    # ---------------------------------------------------------
-    # AUDIO CLEANING + NORMALIZATION
-    # ---------------------------------------------------------
-def preprocess_audio(wav_path: str):
-    y, sr = librosa.load(wav_path, sr=16000, mono=True)
-
-    # Remove start/end silence using librosa
-    y = remove_silence_librosa(y)
-
-    # Normalize audio loudness
-    if np.max(np.abs(y)) > 0:
-         y = y / np.max(np.abs(y))
-
-    # Safety clipping
-    y = np.clip(y, -1.0, 1.0)
-
-    # FIXED LENGTH (CRITICAL)
-    target_sr=16000
-    duration=3
-    max_len = target_sr * duration
-    if len(y) < max_len:
-        y = np.pad(y, (0, max_len - len(y)))
-    else:
-        y = y[:max_len]
-
-    return y, sr
 
 
     # ---------------------------------------------------------
@@ -187,8 +161,13 @@ def analyze_voice_emotion(
     # 1. Load audio
     y, sr = librosa.load(wav_path, sr=16000, mono=True)
 
-    # 2. Remove silence
-    # y = remove_silence_librosa(y)
+    # 🔹 Remove leading/trailing silence
+    y, _ = librosa.effects.trim(y, top_db=30)
+
+    # 🔹 Normalize (VERY IMPORTANT)
+    max_val = np.max(np.abs(y))
+    if max_val > 0:
+        y = y / max_val
 
     if y is None or len(y) == 0:
         raise ValueError("Audio contains no speech after silence removal")

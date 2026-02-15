@@ -1,5 +1,4 @@
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
-# from concurrent.futures import ThreadPoolExecutor
 import asyncio
 
 from utils.file import save_upload_tmp, remove_file_silent
@@ -10,45 +9,45 @@ from service.ai_service import (
     analyze_voice_emotion
 )
 from core.database import get_db
-from api.question_controller import get_question
 from sqlalchemy.orm import Session
 from models.question_result import QuestionResult
 from models.question import Question
 from utils.api_response import ApiResponse 
 from utils.stt_converter import map_score_to_severity
+import traceback
+
 
 router = APIRouter(prefix="/api/transcribe", tags=["transcribe"])
 
 
 @router.post("/")
-def handle_transcription(
+async def handle_transcription(
     file: UploadFile = File(...),
     questionId: int = Form(...),
     db: Session = Depends(get_db)
 ):
-    print("Received transcription request with file:", file.filename, "for question ID:", questionId) 
     src_path = None
     wav_path = None
+    loop = asyncio.get_running_loop()
 
     try:
-        # 1. Save uploaded file (SYNC)
+        # 1️⃣ Save uploaded file
         src_path = save_upload_tmp(file)
         wav_path = src_path + ".wav"
-        file.file.seek(0)
-        audio_bytes = file.file.read()
-        # 2. Convert to WAV
+
+        # 2️⃣ Convert to WAV
         convert_to_wav(src_path, wav_path)
-        print("Uploaded file:", file.filename, file.content_type)
 
+        # 3️⃣ Transcribe audio
+        transcript = await loop.run_in_executor(
+            None, transcribe_file, wav_path
+        )
 
-        # 3. Transcribe using Whisper
-        transcript =transcribe_file( wav_path)
-
-        if not transcript.strip():
+        if not transcript or not transcript.strip():
             raise HTTPException(status_code=400, detail="Unable to transcribe audio.")
 
-        # 4. Load question from DB
-        question = db.query(Question).get(questionId)
+        # 4️⃣ Fetch question (SQLAlchemy 2.x style)
+        question = db.get(Question, questionId)
 
         if not question:
             raise HTTPException(status_code=404, detail="Question not found")
@@ -56,47 +55,49 @@ def handle_transcription(
         if not question.category:
             raise HTTPException(status_code=400, detail="Question category missing")
 
+        category_name = question.category.name
 
-        category_name = question.category.name  # depression / anxiety
-        print("Question category:", category_name)
-        text_result = analyze_text(transcript, category_name)
-        print("TEXT RESULT:", text_result, type(text_result))
+        # 5️⃣ Analyze text & voice concurrently
+        text_future = loop.run_in_executor(
+            None, analyze_text, transcript, category_name
+        )
 
-        voice_result = analyze_voice_emotion(wav_path, category_name)
-        print("VOICE RESULT:", voice_result, type(voice_result))
+        voice_future = loop.run_in_executor(
+            None, analyze_voice_emotion, wav_path, category_name
+        )
 
-        final_weightage = round(
+        text_result, voice_result = await asyncio.gather(
+            text_future, voice_future
+        )
+
+        # 6️⃣ Weighted scoring
+        final_score = round(
             (text_result["weightage"] * 0.6) +
             (voice_result["weightage"] * 0.4),
             2
         )
-        print(f"final severit: {final_weightage}")
-        final_severity = map_score_to_severity(final_weightage)
 
+        final_severity = map_score_to_severity(final_score)
 
-        # 7. Build response
-        result = {
-            "transcript": transcript,
-            "text_emotion": text_result["emotion_breakdown"],
-            "voice_emotion": voice_result["emotion_breakdown"],
-            "final_weightage": final_severity
-        }
-
-
-        # 8. Save result to DB (SYNC)
-       
+        # 7️⃣ Save to DB (store text only or path instead of blob)
         question_result = QuestionResult(
             question_id=question.id,
-            user_answer_audio=audio_bytes,
             user_answer_text=transcript,
+            # user_answer_audio_path=wav_path   # Recommended instead of blob
         )
 
         db.add(question_result)
         db.commit()
         db.refresh(question_result)
 
-
-
+        # 8️⃣ Response
+        result = {
+            "transcript": transcript,
+            "text_emotion": text_result["emotion_breakdown"],
+            "voice_emotion": voice_result["emotion_breakdown"],
+            "final_score": final_score,
+            "final_severity": final_severity
+        }
 
         return ApiResponse(
             message="Transcription and emotion analysis completed successfully",
@@ -105,12 +106,14 @@ def handle_transcription(
         )
 
     except ValueError as ve:
+        db.rollback()
         raise HTTPException(status_code=400, detail=str(ve))
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+        db.rollback()
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
     finally:
-        # Cleanup temporary files
         remove_file_silent(src_path)
         remove_file_silent(wav_path)
