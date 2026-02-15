@@ -90,7 +90,7 @@ async def handle_transcription(
         db.commit()
         db.refresh(question_result)
 
-        # 8️⃣ Response
+        # 8️⃣ Response of teh model
         result = {
             "transcript": transcript,
             "text_emotion": text_result["emotion_breakdown"],
