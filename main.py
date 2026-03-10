@@ -25,7 +25,7 @@ app.add_middleware(
         "http://localhost:5173"
     ],
     allow_methods=["*"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With"]
+    allow_headers=["*"],
 )
 
 @app.get("/")

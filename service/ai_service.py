@@ -10,7 +10,7 @@ from transformers import pipeline
 import numpy as np
 import librosa
 import onnxruntime as ort
-from  utils.stt_converter import DEPRESSION_WEIGHTS, ANXIETY_WEIGHTS, map_score_to_severity
+from  utils.stt_converter import DEPRESSION_WEIGHTS, ANXIETY_WEIGHTS
 
 
 # ---------------------------------------------------------
@@ -30,9 +30,9 @@ whisper_model = whisper.load_model("small")
 
 print("Loading text emotion model...")
 emotion_model = pipeline(
-    "text-classification",
+    task="text-classification",
     model="j-hartmann/emotion-english-distilroberta-base",
-    return_all_scores=True
+    top_k=None
 )
 
 print("Loading ONNX Voice Emotion Recognition model...")
@@ -100,19 +100,44 @@ def transcribe_file(path: str) -> str:
 # ---------------------------------------------------------
 
 def analyze_text(text: str, category_name: str) -> dict:
+
     if not text.strip():
         raise ValueError("Empty transcript detected from audio")
 
     try:
-        emotion_results = emotion_model(text[:512])[0]
+        emotion_results = emotion_model(text[:512])
+        print("DEBUG RAW:", emotion_results)
+
+        # Normalize HuggingFace output
+        if isinstance(emotion_results, list) and len(emotion_results) > 0:
+            if isinstance(emotion_results[0], list):
+                emotion_results = emotion_results[0]
+            elif isinstance(emotion_results[0], dict):
+                emotion_results = emotion_results
+        elif isinstance(emotion_results, dict):
+            emotion_results = [emotion_results]
+        else:
+            raise ValueError(f"Unexpected model output: {emotion_results}")
+
     except Exception as e:
         raise RuntimeError(f"Text emotion model failed: {str(e)}")
 
-    # Normalize labels to lowercase
-    emotion_percentages = {
-        e["label"].lower(): float(e["score"]) * 100
-        for e in emotion_results
-    }
+    emotion_percentages = {}
+
+    print("\n------ Emotion Percentages ------")
+
+    for e in emotion_results:
+        if not isinstance(e, dict):
+            print("Skipping invalid element:", e)
+            continue
+
+        label = e.get("label", "").lower()
+        score = float(e.get("score", 0)) * 100
+
+        emotion_percentages[label] = score
+        print(f"{label}: {score:.2f}%")
+
+    print("---------------------------------\n")
 
     category_name = category_name.lower()
 
@@ -136,7 +161,6 @@ def analyze_text(text: str, category_name: str) -> dict:
         "emotion_breakdown": used_emotions,
         "weightage": round(weighted_score, 2),
     }
-
 
 
     # ---------------------------------------------------------
