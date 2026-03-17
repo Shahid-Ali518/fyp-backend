@@ -2,16 +2,14 @@ from sqlalchemy import Column, Integer, Float, Enum, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from core.database import Base
 from datetime import datetime
-# from models.question import EmotionType
 from models.test_level import TestLevel
-
-
+from sqlalchemy.dialects.postgresql import UUID
 
 class TestAttempt(Base):
     __tablename__ = "test_attempts"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
     category_id = Column(Integer, ForeignKey("test_categories.id"))
     test_score = Column(Float, default=0.0)
     test_level = Column(Enum(TestLevel, name="testlevel"), nullable=True)

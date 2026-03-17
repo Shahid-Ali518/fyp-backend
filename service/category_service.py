@@ -66,8 +66,17 @@ class TestCategoryService:
             categories = db.query(TestCategory).all()
             response.message = "successfully fetched all test categories"
             response.status_code = 200
-            response.data = categories
-            print(categories)
+            
+            dtos = [
+                TestCategoryDTO(
+                    id=c.id,
+                    name=c.name,
+                    description=c.description,
+                    category_type=c.category_type
+                ) for c in categories
+            ]
+            response.data = dtos
+            print(dtos)
         except Exception as e:
             print(e)
             response.status_code = 500
@@ -80,10 +89,19 @@ class TestCategoryService:
         response = ApiResponse(message="Success", status_code=201)
         try:
             category = db.query(TestCategory).get(category_id)
-            print(category)
-            response.message = "successfully fetched test category"
-            response.status_code = 200
-            response.data = category
+            if category:
+                response.message = "successfully fetched test category"
+                response.status_code = 200
+                response.data = TestCategoryDTO(
+                    id=category.id,
+                    name=category.name,
+                    description=category.description,
+                    category_type=category.category_type
+                )
+            else:
+                response.message = "Test category not found"
+                response.status_code = 404
+                response.data = None
         except Exception as e:
             print(e)
             response.status_code = 500
@@ -101,9 +119,16 @@ class TestCategoryService:
             if not categories:
                 raise HTTPException(status_code=404, detail="Test category not found")
 
-            # dtos = map_TestCategoryListEntity_to_dtoList(categories)
-            dtos = [{"id": c.id, "name": c.name, "description": c.description} for c in categories]
-            response.data = dtos
+            # Properly map models to the DTOs
+            dtos = [
+                TestCategoryDTO(
+                    id=c.id,
+                    name=c.name,
+                    description=c.description,
+                    category_type=c.category_type
+                ) for c in categories
+            ]
+            
             response.message = "successfully fetched test category"
             response.status_code = 200
             response.data = dtos

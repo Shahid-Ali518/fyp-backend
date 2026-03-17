@@ -6,12 +6,12 @@ from enum import Enum
 
 # Enum for user roles (reuse your UserRole enum)
 class UserRoleEnum(str, Enum):
-    admin = "admin"
-    user = "user"
+    ADMIN = "ADMIN"
+    USER = "USER"
 
 class UserDTO(BaseModel):
-    id: Optional[int] = None
-    username: str
+    id: Optional[str] = None
+    name: str
     email: EmailStr
     role: Optional[UserRoleEnum] = UserRoleEnum.user
     created_at: Optional[datetime] = None
