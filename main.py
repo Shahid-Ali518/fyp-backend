@@ -9,6 +9,7 @@ from api.transcribe_router import router as transcribe_router
 from api.testAttempt_controller import router as test_attempt_router
 from api.auth_controller import router as auth_router
 from api.user_controller import router as user_router
+from api.contact_controller import router as contact_router
 
 app = FastAPI()
 
@@ -42,3 +43,4 @@ app.include_router(transcribe_router)
 app.include_router(test_attempt_router)
 app.include_router(auth_router)
 app.include_router(user_router)
+app.include_router(contact_router)
