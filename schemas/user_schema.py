@@ -11,8 +11,9 @@ class UserRoleEnum(str, Enum):
 
 class UserDTO(BaseModel):
     id: Optional[int] = None
-    username: str
+    name: str
     email: EmailStr
+    phone_number : str
     role: Optional[UserRoleEnum] = UserRoleEnum.user
     created_at: Optional[datetime] = None
 

@@ -10,7 +10,6 @@ from utils.file import save_upload_tmp, remove_file_silent
 #     analyze_voice_emotion
 # )
 from core.database import get_db
-from api.question_controller import get_question
 from sqlalchemy.orm import Session
 from models.question_result import QuestionResult
 from models.question import Question
@@ -62,6 +61,7 @@ def handle_transcription(
 
         # 4. Load question from DB
         question = db.query(Question).get(questionId)
+        # exited_quesiton = db.query(Question).filter(Question.question_id == questionId).first()
 
         if not question:
             raise HTTPException(status_code=404, detail="Question not found")

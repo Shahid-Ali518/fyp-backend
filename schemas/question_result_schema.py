@@ -1,8 +1,10 @@
 # schemas/question_result_schema.py
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, Dict
 from enum import Enum
 from datetime import datetime
+
+from sqlalchemy import JSON
 
 from models import TestAttempt
 # Reuse your existing EmotionType enum from models
@@ -19,7 +21,7 @@ class QuestionResultDTO(BaseModel):
     user_answer_text: Optional[str] = None
 
     # Emotion detection
-    recognized_emotion: Optional[EmotionType] = None
-    confidence: Optional[float] = 0.0
+    emotion_probabilities: Optional[Dict[str, float]] = None
+
 
     model_config = ConfigDict(from_attributes=True)

@@ -32,8 +32,8 @@ def get_all_questions(db: Session = Depends(get_db)):
 
 
 @router.get("/{question_id}")
-def get_question(question_id: int, db: Session = Depends(get_db)):
-    question = question_service.get_question(db, question_id)
+def get_question_by_id(question_id: int, db: Session = Depends(get_db)):
+    question = question_service.get_question_by_id(db, question_id)
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
     return question
@@ -54,10 +54,8 @@ def update_question(question_id: int, dto: QuestionDTO, db: Session = Depends(ge
 
 @router.delete("/{question_id}")
 def delete_question(question_id: int, db: Session = Depends(get_db)):
-    deleted = question_service.delete_question(db, question_id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Question not found")
-    return {"message": "Question deleted successfully"}
+    return question_service.delete_question(db, question_id)
+
 
 
 

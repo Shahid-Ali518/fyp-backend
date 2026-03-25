@@ -40,7 +40,7 @@ def get_categoreis_by_type(category_type: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{category_id}")
-def update_category(category_id: int, data: dict, db: Session = Depends(get_db)):
+def update_category(category_id: int, data: TestCategoryDTO, db: Session = Depends(get_db)):
     response = category_service.update_category(db, category_id, data)
     if not response:
         raise HTTPException(status_code=404, detail="Category not found")

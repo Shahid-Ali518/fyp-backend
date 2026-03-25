@@ -8,6 +8,7 @@ from models.survey_option import SurveyOption
 from schemas.survey_option_schema import SurveyOptionDTO
 from service.category_service import TestCategoryService
 from utils.api_response import ApiResponse
+from utils.dto_utils import map_survey_option_to_dto
 
 
 class SurveyOptionService:
@@ -89,7 +90,7 @@ class SurveyOptionService:
         return response
 
 
-    # method to get a single option
+    # method to get a single option ====================================
     def get_option_by_id(self, option_id):
         response = ApiResponse(message="Success", status_code=201)
         try:
@@ -105,7 +106,9 @@ class SurveyOptionService:
                 response.message = "No such option"
                 return response
 
-            response.data = option_exist
+            option_dto = map_survey_option_to_dto(option_exist)
+
+            response.data = option_dto
             response.message = "option fetched successfully"
             response.status_code = status.HTTP_200_OK
 
@@ -129,20 +132,23 @@ class SurveyOptionService:
                 return response
 
             option_exist = self.db.query(SurveyOption).filter(SurveyOption.id == option_id).first()
-            if option_exist.count() == 0:
+            if option_exist is None:
                 response.status_code = status.HTTP_404_NOT_FOUND
                 response.message = "No such option"
                 return response
 
-            option_exist.text = dto.option_text
+            option_exist.option_text = dto.option_text
             option_exist.weightage = dto.weightage
 
             self.db.add(option_exist)
             self.db.commit()
             self.db.refresh(option_exist)
 
+            option_dto = map_survey_option_to_dto(option_exist)
+
+            response.data = option_dto
             response.message = "option updated successfully"
-            response.status_code = status.HTTP_200_OK
+            response.status_code = 200
 
         except Exception as e:
             print(e)
@@ -162,15 +168,15 @@ class SurveyOptionService:
                 response.message = "No option id"
                 return response
 
-            option_exist = self.db.query(SurveyOption).filter(SurveyOption.id == option_id)
-            if option_exist.count() == 0:
+            option_exist = self.db.query(SurveyOption).filter(SurveyOption.id == option_id).first()
+            if option_exist is None:
                 response.status_code = status.HTTP_404_NOT_FOUND
                 response.message = "No such option"
                 return response
 
             self.db.delete(option_exist)
             self.db.commit()
-            self.db.refresh(option_exist)
+
 
             response.message = "option deleted successfully"
             response.status_code = status.HTTP_200_OK

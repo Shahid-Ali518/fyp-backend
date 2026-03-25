@@ -25,11 +25,12 @@ class ReportService:
 
         # User Info
         pdf.set_font("Arial", '', 12)
-        pdf.cell(0, 8, f"Name: {user.username}", ln=True)
+        pdf.cell(0, 8, f"Name: {user.name}", ln=True)
+        pdf.cell(0, 8, f"Name: {user.phone_number}", ln=True)
         pdf.cell(0, 8, f"Email: {user.email}", ln=True)
         pdf.cell(0, 8, f"Category: {category.name}", ln=True)
-        pdf.cell(0, 8, f"Total Score: {attempt.test_score}", ln=True)
-        pdf.cell(0, 8, f"Class: {attempt.overall_emotion}", ln=True)
+        pdf.cell(0, 8, f"Mental Health Score: {attempt.mental_health_score}", ln=True)
+        pdf.cell(0, 8, f"Mental Health State: {attempt.mental_health_state}", ln=True)
         pdf.ln(10)
 
         # Question Results

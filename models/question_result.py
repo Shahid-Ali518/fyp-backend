@@ -1,6 +1,6 @@
 from xml.dom.expatbuilder import TEXT_NODE
 
-from sqlalchemy import Column, Integer, Enum, Float, ForeignKey, LargeBinary, Text
+from sqlalchemy import Column, Integer, Enum, Float, ForeignKey, LargeBinary, Text, JSON
 from sqlalchemy.orm import relationship
 from core.database import Base
 from models.question import EmotionType
@@ -20,11 +20,11 @@ class QuestionResult(Base):
 
     # Optional user input fields
     user_answer_audio = Column(LargeBinary, nullable=True)
+    # text from user voice
     user_answer_text = Column(Text, nullable=True)
 
-    # Emotion and confidence (optional)
-    recognized_emotion = Column(Enum(EmotionType), nullable=True)
-    confidence = Column(Float, default=0.0)
+    # all emotion probabilities in json format
+    emotion_probabilities = Column(JSON, nullable=True)
 
     # Relationships
     attempt = relationship("TestAttempt", back_populates="question_results")

@@ -16,7 +16,8 @@ class TestAttemptDTO(BaseModel):
     user_id: Optional[int] = None
     category_id: Optional[int] = None
     test_score: Optional[float] = 0.0
-    overall_emotion: Optional[EmotionType] = None
+    mental_health_score: Optional[float]= None
+    mental_health_state: Optional[str]= None
     attempt_date: Optional[datetime] = None
 
     # Optional nested DTOs for response

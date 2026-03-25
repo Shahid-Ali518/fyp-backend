@@ -16,7 +16,9 @@ class User(Base):
     # id
     id = Column(Integer, primary_key=True, index=True)
     # username
-    username = Column(String(50), unique=True, nullable=False)
+    name = Column(String(50), nullable=False, server_default='unknown')
+    # phone number
+    phone_number = Column(String(20), unique=True, nullable=False)
     # email
     email = Column(String(120), unique=True, nullable=False)
     # password

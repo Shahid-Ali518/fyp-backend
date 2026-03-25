@@ -23,7 +23,7 @@ class SurveyOptionsController():
         service = SurveyOptionService(db)
         return service.add_options_to_category(category_id, options)
 
-    @router.get('/{category_id}')
+    @router.get('/by-category/{category_id}')
     def get_options_by_category(category_id: int, db: Session = Depends(get_db)):
         service = SurveyOptionService(db)
         return service.get_options_by_category(category_id)
@@ -34,8 +34,8 @@ class SurveyOptionsController():
         return service.get_option_by_id(option_id)
 
     @router.put('/{option_id}')
-    def update_option(option_id: int, option: SurveyOptionDTO):
-        service = SurveyOptionService()
+    def update_option(option_id: int, option: SurveyOptionDTO, db: Session = Depends(get_db)):
+        service = SurveyOptionService(db)
         return service.update_option(option_id, option)
 
 

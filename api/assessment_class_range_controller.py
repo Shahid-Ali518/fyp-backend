@@ -28,7 +28,7 @@ class AssessmentClassRangeController():
         service = AssessmentClassRangeService(db)
         return service.add_all_ranges_to_category(category_id, dto)
 
-    @router.get('/{category_id}')
+    @router.get('/by-category-id/{category_id}')
     def get_class_ranges_by_category(category_id: int, db : Session = Depends(get_db)):
         service = AssessmentClassRangeService(db)
         return service.get_options_by_category(category_id)
@@ -42,7 +42,6 @@ class AssessmentClassRangeController():
     def update_assessment_class_range_by_id(assessment_class_id: int, dto: AssessmentClassRangeDTO, db: Session = Depends(get_db)):
         service = AssessmentClassRangeService(db)
         return service.update_assessment_class_range(assessment_class_id, dto)
-
     @router.delete('/{assessment_class_id}')
     def delete_assessment_class_range(assessment_class_id: int, db: Session = Depends(get_db)):
         service = AssessmentClassRangeService(db)

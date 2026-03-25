@@ -11,7 +11,13 @@ class TestAttempt(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     category_id = Column(Integer, ForeignKey("test_categories.id"))
     test_score = Column(Float, default=0.0)
-    overall_emotion = Column(String(100), nullable=True)
+
+    # store overall mental health score like 0 - 1
+    mental_health_score = Column(Float, default=0.0)
+
+    # overall mental health condition like, depression, anxiety
+    mental_health_state = Column(String(300), nullable=True)
+
     attempt_date = Column(DateTime, default=datetime.utcnow)
 
     # relationships

@@ -5,62 +5,62 @@ from typing import List
 import PyPDF2
 from PyPDF2 import PdfReader
 from fastapi import UploadFile, File, HTTPException
-
 from sqlalchemy.orm import Session
 from starlette import status
 
 from models import TestCategory
 from models.question import Question
 from schemas.question_schema import QuestionDTO
+from schemas.question_schema import QuestionCreateDTO
 from utils.api_response import ApiResponse
 from utils.tts_converter import text_to_audio_bytes
 
-
 class QuestionService:
 
+
+
     # add only one question ==================================
-    def add_question_to_category(self, db: Session, category_id : int , dtos : List[QuestionDTO]):
-        response = ApiResponse(message="Success", status_code=201)
-
-        try:
-
-            if category_id is None:
-                response.status_code = status.HTTP_404_NOT_FOUND
-                response.message = "category does not exist"
-                return response
-
-            category_exist = db.query().filter(TestCategory.id == category_id).first()
-            if category_exist is None:
-                response.status_code = status.HTTP_404_NOT_FOUND
-                response.message = "category does not exist"
-                return response
-
-
-            all_questions = []
-            for dto in dtos:
-                text = dto.text
-
-                # Convert text to audio (bytes)
-                audio_bytes = text_to_audio_bytes(text)
-                # print(audio_bytes)
-                print("here audio bytes are generated")
-
-                question = Question(text=dto.text, category_id=dto.category_id, audio_bytes=audio_bytes)
-                all_questions.append(question)
-
-            db.add(all_questions)
-            db.commit()
-            db.refresh(all_questions)
-            response.message = "Question created"
-            response.status_code = 201
-
-        except Exception as e:
-            print(e)
-            db.rollback()
-            response.message = "Exception occurred while creating question"
-            response.status_code = 500
-
-        return response
+    # def add_question_to_category(self, db: Session, category_id : int , dtos : List[QuestionDTO]):
+    #     response = ApiResponse(message="Success", status_code=201)
+    #
+    #     try:
+    #
+    #         if category_id is None:
+    #             response.status_code = status.HTTP_404_NOT_FOUND
+    #             response.message = "category does not exist"
+    #             return response
+    #
+    #         category_exist = db.query().filter(TestCategory.id == category_id).first()
+    #         if category_exist is None:
+    #             response.status_code = status.HTTP_404_NOT_FOUND
+    #             response.message = "category does not exist"
+    #             return response
+    #
+    #
+    #         all_questions = []
+    #         for dto in dtos:
+    #             text = dto.text
+    #
+    #             # Convert text to audio (bytes)
+    #             audio_bytes = text_to_audio_bytes(text)
+    #             # print(audio_bytes)
+    #             print("here audio bytes are generated")
+    #
+    #             question = Question(text=dto.text, category_id=dto.category_id, audio_bytes=audio_bytes)
+    #             all_questions.append(question)
+    #
+    #         db.add(all_questions)
+    #         db.commit()
+    #         response.message = "Question created"
+    #         response.status_code = 201
+    #
+    #     except Exception as e:
+    #         print(e)
+    #         db.rollback()
+    #         response.message = "Exception occurred while creating question"
+    #         response.status_code = 500
+    #
+    #     return response
 
     # method to add list of questions to a category =================================
     async def add_questions_to_category(self, db: Session, category_id : int, dtos : List[QuestionDTO]):
@@ -208,11 +208,23 @@ class QuestionService:
 
         return response
 
-    def get_question(self, db: Session, question_id: int):
+    def get_question_by_id(self, db: Session, question_id: int):
         response = ApiResponse(message="Success", status_code=201)
         try:
-            question = db.query(Question).get(question_id)
-            response.question = question
+            print(question_id)
+            question = db.query(Question).filter(Question.id == question_id).first()
+            if question is None:
+                response.status_code = status.HTTP_404_NOT_FOUND
+                response.message = "Question not found"
+                return response
+
+            question_dto = QuestionDTO(
+                id=question.id,
+                text=question.text,
+                category_id=question.category_id
+            )
+
+            response.data = question_dto
             response.message = "Question retrieved successfully"
             response.status_code = 200
 
@@ -228,7 +240,7 @@ class QuestionService:
         response = ApiResponse(message="Success", status_code=201)
         try:
             questions = db.query(Question).filter_by(category_id=category_id).all()
-            response.questions = questions
+            response.data = questions
             response.message = "Questions retrieved successfully"
             response.status_code = 200
 
@@ -243,23 +255,30 @@ class QuestionService:
     def update_question(self, db: Session, question_id: int, dto: QuestionDTO):
         response = ApiResponse(message="Success", status_code=201)
         try:
-            question = self.get_question(db, question_id)
-            if not question:
+            question = db.query(Question).filter(Question.id == question_id).first()
+
+            if question is None:
                 response.status_code = 404
                 response.message = "Question not found"
                 return response
 
-            if dto.text is not None:
-                question.text = dto.text
-                question.audio_bytes = text_to_audio_bytes(dto.text)
+            print("Quesstion: " , question.category_id)
 
-            if dto.category_id is not None:
-                question.category_id = dto.category_id
+            question.text = dto.text
+            question.audio_bytes = text_to_audio_bytes(dto.text)
+            question.category_id = dto.category_id
 
+            db.add(question)
             db.commit()
             db.refresh(question)
 
-            response.data = QuestionDTO.model_validate(question)
+            question_dto = QuestionDTO(
+                id=question.id,
+                category_id=question.category_id,
+                text=question.text
+            )
+
+            response.data = question_dto
             response.message = "Question updated"
             response.status_code = 200
 
@@ -274,9 +293,12 @@ class QuestionService:
     def delete_question(self, db: Session, question_id: int):
         response = ApiResponse(message="Success", status_code=201)
         try:
-            question = self.get_question(db, question_id)
-            if not question:
-                return None
+            question= db.query(Question).filter(Question.id == question_id).first()
+
+            if question is None:
+                response.status_code = 404
+                response.message = "Question not found"
+                return response
 
             db.delete(question)
             db.commit()

@@ -7,6 +7,7 @@ from models import TestCategory
 from models.assessment_class_range import AssessmentClassRange
 from schemas.assessment_class_range_schema import AssessmentClassRangeDTO
 from utils.api_response import ApiResponse
+from utils.dto_utils import map_assessment_class_range_to_dto
 
 
 class AssessmentClassRangeService():
@@ -63,7 +64,7 @@ class AssessmentClassRangeService():
         return response
 
     # method to find all assessment class ranges owned by particular test category ====================
-    def get_options_by_category(self, category_id):
+    def get_options_by_category(self, category_id: int):
         response = ApiResponse(message="Success", status_code=201)
 
         try:
@@ -92,8 +93,8 @@ class AssessmentClassRangeService():
         return response
 
 
-    # method to get a single assessment class range
-    def get_assessment_class_by_id(self, assessment_class_id):
+    # method to get a single assessment class range =====================
+    def get_assessment_class_by_id(self, assessment_class_id: int):
         response = ApiResponse(message="Success", status_code=201)
         try:
             if assessment_class_id is None:
@@ -102,15 +103,17 @@ class AssessmentClassRangeService():
                 return response
 
             assessment_range = self.db.query(AssessmentClassRange).filter(AssessmentClassRange.id == assessment_class_id).first()
-
-            if assessment_class_id is None:
+            print(assessment_range)
+            if assessment_range is None:
                 response.status_code = status.HTTP_404_NOT_FOUND
                 response.message = "No such Assessment class "
                 return response
 
-            response.data = assessment_range
+            assessment_range_dto = map_assessment_class_range_to_dto(assessment_range)
+
+            response.data = assessment_range_dto
             response.message = "Assessment class  fetched successfully"
-            response.status_code = status.HTTP_200_OK
+            response.status_code = 200
 
         except Exception as e:
             print(e)
@@ -132,24 +135,23 @@ class AssessmentClassRangeService():
                 return response
 
             assess_exist = self.db.query(AssessmentClassRange).filter(AssessmentClassRange.id == assessment_class_id).first()
-            if assess_exist.count() == 0:
+            if assess_exist is None:
                 response.status_code = status.HTTP_404_NOT_FOUND
                 response.message = "No such Assessment class "
                 return response
 
-            orm_instance = AssessmentClassRange(
-                id = dto.id,
-                min_score=dto.min_score,
-                max_score=dto.max_score,
-                label=dto.label
-            )
+            assess_exist.min_score = dto.min_score
+            assess_exist.max_score = dto.max_score
+            assess_exist.label = dto.label
 
-            self.db.add(orm_instance)
+            self.db.add(assess_exist)
             self.db.commit()
-            self.db.refresh(orm_instance)
+            self.db.refresh(assess_exist)
 
+            assessment_range_dto = map_assessment_class_range_to_dto(assess_exist)
             response.message = "option updated successfully"
-            response.status_code = status.HTTP_200_OK
+            response.status_code = 200
+            response.data = assessment_range_dto
 
         except Exception as e:
             print(e)
@@ -169,18 +171,18 @@ class AssessmentClassRangeService():
                 response.message = "No Assessment class id"
                 return response
 
-            class_exist = self.db.query(AssessmentClassRange).filter(AssessmentClassRange.id == assessment_class_id)
-            if class_exist.count() == 0:
+            class_exist = self.db.query(AssessmentClassRange).filter(AssessmentClassRange.id == assessment_class_id).first()
+            if class_exist is None:
                 response.status_code = status.HTTP_404_NOT_FOUND
                 response.message = "No such option"
                 return response
 
             self.db.delete(class_exist)
             self.db.commit()
-            self.db.refresh(class_exist)
+
 
             response.message = "Assessment class  deleted successfully"
-            response.status_code = status.HTTP_200_OK
+            response.status_code = 200
 
         except Exception as e:
             print(e)

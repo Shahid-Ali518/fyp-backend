@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from models.test_category import TestCategory
 from schemas.test_category_schema import TestCategoryDTO
 from utils.api_response import ApiResponse
-from utils.dto_utils import map_TestCategoryListEntity_to_dtoList
+from utils.dto_utils import map_TestCategoryListEntity_to_dtoList, map_TestCategoryEntity_to_dto
 
 
 class TestCategoryService:
@@ -101,8 +101,8 @@ class TestCategoryService:
             if not categories:
                 raise HTTPException(status_code=404, detail="Test category not found")
 
-            # dtos = map_TestCategoryListEntity_to_dtoList(categories)
-            dtos = [{"id": c.id, "name": c.name, "description": c.description} for c in categories]
+            dtos = map_TestCategoryListEntity_to_dtoList(categories)
+            # dtos = [{"id": c.id, "name": c.name, "description": c.description} for c in categories]
             response.data = dtos
             response.message = "successfully fetched test category"
             response.status_code = 200
@@ -120,7 +120,8 @@ class TestCategoryService:
     def update_category(self, db: Session, category_id: int, dto: TestCategoryDTO):
         response = ApiResponse(message="Success", status_code=201)
         try:
-            category = self.get_category(db, category_id)
+            category = db.query(TestCategory).get(category_id)
+
             if not category:
                 response.status_code = 404
                 response.message = "Category not found"
@@ -131,23 +132,15 @@ class TestCategoryService:
                 category.name = dto.name
             if dto.description is not None:
                 category.description = dto.description
-
-            # Optional: update related lists (class_ranges, questions, options, attempts)
-            # You can implement logic to update these relationships as needed.
-            # For example, replacing existing class_ranges:
-            if dto.class_ranges is not None:
-                category.class_ranges = [cr.to_model() for cr in dto.class_ranges]
-
-            if dto.questions is not None:
-                category.questions = [q.to_model() for q in dto.questions]
-
-            if dto.options is not None:
-                category.options = [o.to_model() for o in dto.options]
+            if dto.category_type is not None:
+                category.category_type = dto.category_type
 
             db.commit()
             db.refresh(category)
 
-            response.data = TestCategoryDTO.model_validate(category)
+            response_category = map_TestCategoryEntity_to_dto(category)
+
+            response.data = response_category
             response.message = "Category updated successfully"
             response.status_code = 200
 
