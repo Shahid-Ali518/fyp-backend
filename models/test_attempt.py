@@ -1,23 +1,18 @@
-from sqlalchemy import Column, Integer, Float, Enum, ForeignKey, DateTime, String
+from sqlalchemy import Column, Integer, Float, Enum, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from core.database import Base
 from datetime import datetime
-from models.question import EmotionType
+from models.test_level import TestLevel
+from sqlalchemy.dialects.postgresql import UUID
 
 class TestAttempt(Base):
     __tablename__ = "test_attempts"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    id = Column(Integer, primary_key=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
     category_id = Column(Integer, ForeignKey("test_categories.id"))
     test_score = Column(Float, default=0.0)
-
-    # store overall mental health score like 0 - 1
-    mental_health_score = Column(Float, default=0.0)
-
-    # overall mental health condition like, depression, anxiety
-    mental_health_state = Column(String(300), nullable=True)
-
+    test_level = Column(Enum(TestLevel, name="testlevel"), nullable=True)
     attempt_date = Column(DateTime, default=datetime.utcnow)
 
     # relationships

@@ -6,25 +6,26 @@ import enum
 
 # enum to store user role
 class UserRole(enum.Enum):
-    user = "user"
-    admin = "admin"
+    USER = "USER"
+    ADMIN = "ADMIN"
+
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 
 # user class
 class User(Base):
     __tablename__ = "users"
 
     # id
-    id = Column(Integer, primary_key=True, index=True)
-    # username
-    name = Column(String(50), nullable=False, server_default='unknown')
-    # phone number
-    phone_number = Column(String(20), unique=True, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    # name
+    name = Column(String(100), nullable=False)
     # email
     email = Column(String(120), unique=True, nullable=False)
     # password
     password = Column(String(255), nullable=False)
     # user role
-    role = Column(Enum(UserRole), default=UserRole.user, nullable=False)
+    role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
     # time at which comes to the application and login in
     created_at = Column(DateTime, default=datetime.utcnow)
 

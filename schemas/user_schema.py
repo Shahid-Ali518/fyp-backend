@@ -6,15 +6,14 @@ from enum import Enum
 
 # Enum for user roles (reuse your UserRole enum)
 class UserRoleEnum(str, Enum):
-    admin = "admin"
-    user = "user"
+    ADMIN = "ADMIN"
+    USER = "USER"
 
 class UserDTO(BaseModel):
-    id: Optional[int] = None
+    id: Optional[str] = None
     name: str
     email: EmailStr
-    phone_number : str
     role: Optional[UserRoleEnum] = UserRoleEnum.user
     created_at: Optional[datetime] = None
 
-
+    model_config = ConfigDict(from_attributes=True)
