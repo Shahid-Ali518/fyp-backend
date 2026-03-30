@@ -40,7 +40,6 @@ def map_user_user_dto(user : User) -> UserDTO:
     return UserDTO(
         id=user.id,
         name=user.name,
-        phone_number=user.phone_number,
         email=user.email
     )
 

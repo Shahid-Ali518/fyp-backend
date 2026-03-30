@@ -2,9 +2,9 @@ from sqlalchemy.orm import Session
 
 from ml_models.emotion_detection_by_wavlm import predict_emotion_wavlm_model
 from models import QuestionResult, Question, TestAttempt
-from utils.api_response import ApiResponse
-from utils.audio_utils import clean_audio_librosa, convert_audio_to_bytes, convert_array_to_bytes
-from utils.dto_utils import map_question_result_to_dto
+from schemas.api_response import ApiResponse
+from utils.audio_utils import clean_audio_librosa, convert_array_to_bytes
+from mapper.dto_utils import map_question_result_to_dto
 
 
 class EmotionPredictionByWavLmService():

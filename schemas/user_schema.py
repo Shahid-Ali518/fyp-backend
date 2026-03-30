@@ -15,6 +15,7 @@ class UserDTO(BaseModel):
     id: Optional[uuid.UUID] = None
     name: str
     email: EmailStr
+    password: Optional[str] = None
     role: Optional[UserRoleEnum] = UserRoleEnum.USER
     created_at: Optional[datetime] = None
 

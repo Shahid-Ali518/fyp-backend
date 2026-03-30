@@ -1,7 +1,7 @@
 
 from core.database import  get_db
 from service.emotion_prediction_by_wavlm_service import EmotionPredictionByWavLmService
-from utils.api_response import ApiResponse
+from schemas.api_response import ApiResponse
 import os
 import uuid
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException

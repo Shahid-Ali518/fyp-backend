@@ -1,13 +1,14 @@
-from http.client import responses
+import uuid
 
 from fastapi import HTTPException
 from psycopg2.errors import UniqueViolation
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+
+from mapper.category_mapper import CategoryMapper
 from models.test_category import TestCategory
 from schemas.test_category_schema import TestCategoryDTO
-from utils.api_response import ApiResponse
-from utils.dto_utils import map_TestCategoryListEntity_to_dtoList
+from schemas.api_response import ApiResponse
 
 
 class TestCategoryService:
@@ -85,7 +86,7 @@ class TestCategoryService:
         return response
 
     # method to get a category by id ============================
-    def get_category_by_id(self, db: Session, category_id: int):
+    def get_category_by_id(self, db: Session, category_id: uuid.UUID):
         response = ApiResponse(message="Success", status_code=201)
         try:
             category = db.query(TestCategory).get(category_id)
@@ -106,6 +107,34 @@ class TestCategoryService:
             print(e)
             response.status_code = 500
             response.message = 'exception occurred while fetching test category'
+
+        return response
+
+    # method to get detailed category along with its all children
+    def get_full_category_details(self, db: Session, category_id: uuid.UUID):
+        response = ApiResponse(message="Success", status_code=200)
+        try:
+            # 1. Fetch with Eager Loading (One Query)
+            category = db.query(TestCategory).options(
+                joinedload(TestCategory.questions),
+                joinedload(TestCategory.options),
+                joinedload(TestCategory.class_ranges)
+            ).filter(TestCategory.id == category_id).first()
+
+            if not category:
+                response.message = "Assessment not found"
+                response.status_code = 404
+                return response
+
+            # 2. Use the Mapper
+            response.data = CategoryMapper.to_detailed_dto(category)
+            response.message = "Successfully aggregated all assessment layers"
+            response.status_code = 200
+
+        except Exception as e:
+            print(f"Mapping Error: {e}")
+            response.status_code = 500
+            response.message = "Internal server error during data mapping"
 
         return response
 
@@ -142,7 +171,7 @@ class TestCategoryService:
 
     # method to update a category ======================================================
         
-    def update_category(self, db: Session, category_id: int, dto: TestCategoryDTO):
+    def update_category(self, db: Session, category_id: uuid.UUID, dto: TestCategoryDTO):
         response = ApiResponse(message="Success", status_code=201)
         try:
             category = self.get_category(db, category_id)
@@ -185,7 +214,7 @@ class TestCategoryService:
         return response
 
     # method to delete a category ================================================
-    def delete_category(self, db: Session, category_id: int):
+    def delete_category(self, db: Session, category_id: uuid.UUID):
         response = ApiResponse(message="Success", status_code=201)
 
         try:

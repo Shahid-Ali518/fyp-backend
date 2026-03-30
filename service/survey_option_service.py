@@ -1,3 +1,4 @@
+import uuid
 from typing import List
 
 from sqlalchemy.orm import Session
@@ -6,9 +7,8 @@ from starlette import status
 from models import TestCategory
 from models.survey_option import SurveyOption
 from schemas.survey_option_schema import SurveyOptionDTO
-from service.category_service import TestCategoryService
-from utils.api_response import ApiResponse
-from utils.dto_utils import map_survey_option_to_dto
+from schemas.api_response import ApiResponse
+from mapper.dto_utils import map_survey_option_to_dto
 
 
 class SurveyOptionService:
@@ -19,7 +19,7 @@ class SurveyOptionService:
 
 
     # method to add list of options to a particular test category =======================
-    def add_options_to_category(self, category_id, options: List[SurveyOptionDTO]):
+    def add_options_to_category(self, category_id: uuid.UUID, options: List[SurveyOptionDTO]):
         response = ApiResponse(message="Success", status_code=201)
 
         try:
@@ -62,7 +62,7 @@ class SurveyOptionService:
         return response
 
     # method to find all options owned by particular test category ====================
-    def get_options_by_category(self, category_id):
+    def get_options_by_category(self, category_id: uuid.UUID):
         response = ApiResponse(message="Success", status_code=201)
 
         try:
@@ -91,7 +91,7 @@ class SurveyOptionService:
 
 
     # method to get a single option ====================================
-    def get_option_by_id(self, option_id):
+    def get_option_by_id(self, option_id: uuid.UUID):
         response = ApiResponse(message="Success", status_code=201)
         try:
             if option_id is None:
@@ -122,7 +122,7 @@ class SurveyOptionService:
 
 
     # method to update option ========================================
-    def update_option(self, option_id, dto: SurveyOptionDTO):
+    def update_option(self, option_id: uuid.UUID, dto: SurveyOptionDTO):
         response = ApiResponse(message="Success", status_code=201)
 
         try:
@@ -159,7 +159,7 @@ class SurveyOptionService:
         return response
 
     # method to delete option ==========================================
-    def delete_option(self, option_id):
+    def delete_option(self, option_id: uuid.UUID):
         response = ApiResponse(message="Success", status_code=201)
 
         try:

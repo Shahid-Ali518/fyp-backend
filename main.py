@@ -10,6 +10,8 @@ from api.testAttempt_controller import router as test_attempt_router
 from api.auth_controller import router as auth_router
 from api.user_controller import router as user_router
 from api.contact_controller import router as contact_router
+from api.survey_options_controller import router as survey_options_router
+from api.assessment_class_range_controller import router as assessment_class_range_router
 
 app = FastAPI()
 
@@ -21,6 +23,7 @@ create_tables()
 
 origins = [
     "http://localhost:3000",
+    "http://localhost:8080",
 ]
 
 app.add_middleware(
@@ -37,10 +40,14 @@ def read_root():
 
 
 # all routes of app
-app.include_router(question_router)
-app.include_router(category_router)
 app.include_router(transcribe_router)
-app.include_router(test_attempt_router)
+app.include_router(contact_router)
+
+
 app.include_router(auth_router)
 app.include_router(user_router)
-app.include_router(contact_router)
+app.include_router(category_router)
+app.include_router(question_router)
+app.include_router(survey_options_router)
+app.include_router(assessment_class_range_router)
+app.include_router(test_attempt_router)

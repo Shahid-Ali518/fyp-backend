@@ -10,10 +10,8 @@ from service.ai_service import (
 )
 from core.database import get_db
 from sqlalchemy.orm import Session
-from models.question_result import QuestionResult
-from models.question import Question
 from models.test_category import TestCategory
-from utils.api_response import ApiResponse 
+from schemas.api_response import ApiResponse
 from utils.stt_converter import map_final_score
 import traceback
 from service.llm_service import llm_service

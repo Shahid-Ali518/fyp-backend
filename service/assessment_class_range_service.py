@@ -1,3 +1,4 @@
+import uuid
 from typing import List
 
 from sqlalchemy.orm import Session
@@ -6,8 +7,8 @@ from starlette import status
 from models import TestCategory
 from models.assessment_class_range import AssessmentClassRange
 from schemas.assessment_class_range_schema import AssessmentClassRangeDTO
-from utils.api_response import ApiResponse
-from utils.dto_utils import map_assessment_class_range_to_dto
+from schemas.api_response import ApiResponse
+from mapper.dto_utils import map_assessment_class_range_to_dto
 
 
 class AssessmentClassRangeService():
@@ -17,7 +18,7 @@ class AssessmentClassRangeService():
 
 
     # method to add all ranges to a particular category
-    def add_all_ranges_to_category(self, category_id: int, dtos: List[AssessmentClassRangeDTO]):
+    def add_all_ranges_to_category(self, category_id: uuid.UUID, dtos: List[AssessmentClassRangeDTO]):
 
         response = ApiResponse(message="Success", status_code=201)
 
@@ -64,7 +65,7 @@ class AssessmentClassRangeService():
         return response
 
     # method to find all assessment class ranges owned by particular test category ====================
-    def get_options_by_category(self, category_id: int):
+    def get_options_by_category(self, category_id: uuid.UUID):
         response = ApiResponse(message="Success", status_code=201)
 
         try:
@@ -94,7 +95,7 @@ class AssessmentClassRangeService():
 
 
     # method to get a single assessment class range =====================
-    def get_assessment_class_by_id(self, assessment_class_id: int):
+    def get_assessment_class_by_id(self, assessment_class_id: uuid.UUID):
         response = ApiResponse(message="Success", status_code=201)
         try:
             if assessment_class_id is None:
@@ -125,7 +126,7 @@ class AssessmentClassRangeService():
 
 
     # method to update Assessment class
-    def update_assessment_class_range(self, assessment_class_id: int, dto: AssessmentClassRangeDTO):
+    def update_assessment_class_range(self, assessment_class_id: uuid.UUID, dto: AssessmentClassRangeDTO):
         response = ApiResponse(message="Success", status_code=201)
 
         try:
@@ -162,7 +163,7 @@ class AssessmentClassRangeService():
         return response
 
     # method to delete option ============================================
-    def delete_assessment_class_range(self, assessment_class_id: int):
+    def delete_assessment_class_range(self, assessment_class_id: uuid.UUID):
         response = ApiResponse(message="Success", status_code=201)
 
         try:

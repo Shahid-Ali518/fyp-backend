@@ -1,4 +1,5 @@
 import traceback
+import uuid
 from datetime import datetime
 
 from fastapi import HTTPException
@@ -7,10 +8,8 @@ from sqlalchemy.orm import Session
 from models import TestCategory, QuestionResult, TestAttempt, User
 from models.assessment_class_range import AssessmentClassRange
 from models.survey_option import SurveyOption
-from schemas.test_attempt_schema import TestAttemptDTO
-from schemas.user_schema import UserDTO
-from utils.api_response import ApiResponse
-from utils.dto_utils import map_user_user_dto, map_TestCategoryEntity_to_dto, map_test_attempt_to_dto
+from schemas.api_response import ApiResponse
+from mapper.dto_utils import map_test_attempt_to_dto
 from utils.mental_health_decider import calculate_mental_health_state
 
 
@@ -18,7 +17,7 @@ class TestAttemptService:
 
 
     # method to initialize the attempt
-    def create_attempt(self, user_id: int, category_id: int, db: Session):
+    def create_attempt(self, user_id: uuid.UUID, category_id: uuid.UUID, db: Session):
         response = ApiResponse(status_code=200, message="success")
 
         try:
@@ -179,7 +178,7 @@ class TestAttemptService:
 
 
     # method to create voice based emotion detection assessment
-    def take_voice_based_attempt(self, user_id: int, attempt_id: int,  db: Session):
+    def take_voice_based_attempt(self, user_id: uuid.UUID, attempt_id: uuid.UUID,  db: Session):
         response = ApiResponse(status_code=200, message="success")
 
         try:
@@ -240,7 +239,7 @@ class TestAttemptService:
 
 
     # method to cancel the attempt
-    def cancel_attempt(self, user_id: int, attempt_id: int, db: Session):
+    def cancel_attempt(self, user_id: uuid.UUID, attempt_id: uuid.UUID, db: Session):
         response = ApiResponse(status_code=200, message="success")
         try:
 
