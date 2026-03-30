@@ -1,10 +1,12 @@
 # schemas/survey_option_schema.py
+import uuid
+
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class SurveyOptionDTO(BaseModel):
-    id: Optional[int] = None
-    category_id: Optional[int] = None
+    id: Optional[uuid.UUID] = None
+    category_id: Optional[uuid.UUID] = None
     option_text: str
     weightage: float
 

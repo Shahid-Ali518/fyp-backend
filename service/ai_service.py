@@ -3,9 +3,6 @@ import tempfile
 from typing import List, Dict, Any
 from dotenv import load_dotenv
 
-import ffmpeg
-import whisper
-from transformers import pipeline
 
 import numpy as np
 import librosa
@@ -17,27 +14,45 @@ from  utils.stt_converter import DEPRESSION_WEIGHTS, ANXIETY_WEIGHTS
 # Set ffmpeg path
 # ---------------------------------------------------------
 load_dotenv()
+
+# to skip all heavy imports, at start up, make true in .env to import
+ENABLE_AI = os.getenv("ENABLE_AI_MODELS", "false").lower() == "true"
+
 FFMPEG_PATH = os.getenv("FFMPEG_PATH")
 if FFMPEG_PATH:
     os.environ["PATH"] = str(FFMPEG_PATH) + os.pathsep + os.environ.get("PATH", "")
 
 
-# ---------------------------------------------------------
-# Load Models Once
-# ---------------------------------------------------------
-print("Loading Whisper model...")
-whisper_model = whisper.load_model("small")
 
-print("Loading text emotion model...")
-emotion_model = pipeline(
-    task="text-classification",
-    model="j-hartmann/emotion-english-distilroberta-base",
-    top_k=None
-)
+# global variables
+whisper_model = None
+emotion_model = None
+voice_ort_session = None
 
-print("Loading ONNX Voice Emotion Recognition model...")
-VOICE_EMOTION_ONNX_PATH = "pretrained_models/voice_emotion.onnx"
-voice_ort_session = ort.InferenceSession(VOICE_EMOTION_ONNX_PATH)
+# ---------------------------------------------------------
+# Load Models only when .env becomes true
+# ---------------------------------------------------------
+if ENABLE_AI:
+    import whisper
+    import ffmpeg
+    import librosa
+    import onnxruntime as ort
+    from transformers import pipeline
+    from utils.stt_converter import DEPRESSION_WEIGHTS, ANXIETY_WEIGHTS
+
+    print("AI Mode Enabled: Loading Models...")
+    whisper_model = whisper.load_model("small")
+
+    emotion_model = pipeline(
+        task="text-classification",
+        model="j-hartmann/emotion-english-distilroberta-base",
+        top_k=None
+    )
+
+    VOICE_EMOTION_ONNX_PATH = "pretrained_models/voice_emotion.onnx"
+    voice_ort_session = ort.InferenceSession(VOICE_EMOTION_ONNX_PATH)
+else:
+    print("AI Mode Disabled: Skipping heavy model loads.")
 
 VOICE_LABEL_MAP = {
     "Anger": "anger",

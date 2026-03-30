@@ -1,10 +1,12 @@
 # schemas/assessment_class_range_schema.py
+import uuid
+
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class AssessmentClassRangeDTO(BaseModel):
-    id: Optional[int] = None
-    category_id: Optional[int] = None
+    id: Optional[uuid.UUID] = None
+    category_id: Optional[uuid.UUID] = None
     label: str
     min_score: int
     max_score: int

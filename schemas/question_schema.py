@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional
 from datetime import datetime
@@ -8,8 +10,8 @@ class QuestionCreateDTO(BaseModel):
     audio_url: Optional[str] = None
 
 class QuestionDTO(BaseModel):
-    id: Optional[int] = None
-    category_id: Optional[int] = None
+    id: Optional[uuid.UUID] = None
+    category_id: Optional[uuid.UUID] = None
     text: str
     # 1. Change type to str and rename to audio_url for clarity
     audio_url: Optional[str] = None

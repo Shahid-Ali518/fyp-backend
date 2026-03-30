@@ -29,5 +29,5 @@ class User(Base):
     # time at which comes to the application and login in
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # store its all records of tests he/she attempted
+    # store it's all records of tests he/she attempted
     attempts = relationship("TestAttempt", back_populates="user", cascade="all, delete")

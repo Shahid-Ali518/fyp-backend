@@ -7,12 +7,15 @@ load_dotenv()
 # Configure Google Generative AI (Gemini)
 # Note: User needs to provide GEMINI_API_KEY in .env
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-flash-latest')
-else:
-    model = None
+ENABLE_LLM = os.getenv("ENABLE_GEMINI_LLM", "false").lower() == "true"
+
+if ENABLE_LLM:
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-flash-latest')
+    else:
+        model = None
 
 class LLMInterviewService:
     def __init__(self):
@@ -70,7 +73,7 @@ class LLMInterviewService:
         prompt = self.system_prompt.format(category=category, q_count=q_count)
         if history_text:
             prompt += f"\n--- Interview History ---\n{history_text}\n"
-        
+
         prompt += "\nBased on the above, what is the next most relevant question to ask?"
         
         print(f"DEBUG: Generating question {q_count + 1} for category: {category}")

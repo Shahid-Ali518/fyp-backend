@@ -1,3 +1,4 @@
+import uuid
 
 # schemas/test_category_schema.py
 from pydantic import BaseModel, ConfigDict
@@ -11,7 +12,7 @@ from .survey_option_schema import SurveyOptionDTO
 
 
 class TestCategoryDTO(BaseModel):
-    id: Optional[int] = None
+    id: Optional[uuid.UUID] = None
     name: Optional[str] = None
     description: Optional[str] = None
     category_type: Optional[str]  = None
