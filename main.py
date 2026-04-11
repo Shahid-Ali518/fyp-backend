@@ -6,12 +6,13 @@ from core.database import create_tables
 from api.category_controller import router as category_router
 from api.question_controller import router as question_router
 from api.transcribe_router import router as transcribe_router
-from api.testAttempt_controller import router as test_attempt_router
+from api.test_attempt_controller import router as test_attempt_router
 from api.auth_controller import router as auth_router
 from api.user_controller import router as user_router
 from api.contact_controller import router as contact_router
 from api.survey_options_controller import router as survey_options_router
 from api.assessment_class_range_controller import router as assessment_class_range_router
+from api.report_controller import router as report_router
 
 app = FastAPI()
 
@@ -51,3 +52,4 @@ app.include_router(question_router)
 app.include_router(survey_options_router)
 app.include_router(assessment_class_range_router)
 app.include_router(test_attempt_router)
+app.include_router(report_router)

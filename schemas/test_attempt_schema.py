@@ -4,20 +4,20 @@ import uuid
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
-from enum import Enum
 
+from sqlalchemy import String, Text
 
-from schemas.question_result_schema import QuestionResultDTO
-from models.test_level import TestLevel
+from schemas.test_category_schema import TestCategoryDTO
 
 
 class TestAttemptDTO(BaseModel):
     id: Optional[uuid.UUID] = None
     user_id: Optional[uuid.UUID] = None
-    category_id: uuid.UUID
+    category_id: Optional[uuid.UUID] = None
     test_score: Optional[float] = 0.0
-    test_level: Optional[TestLevel] = None
+    test_state: Optional[str] = None
     attempt_date: Optional[datetime] = None
+    category: Optional[TestCategoryDTO] = None
 
     model_config = ConfigDict(from_attributes=True)
 

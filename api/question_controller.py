@@ -59,8 +59,6 @@ def delete_question(question_id: uuid.UUID, db: Session = Depends(get_db), _ = D
 
 
 
-
-
 # utility controller to get audio of question
 @router.get("/{question_id}/audio")
 def get_question_audio(question_id: uuid.UUID, db: Session = Depends(get_db), _ = Depends(any_user)):

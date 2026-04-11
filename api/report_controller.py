@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -6,21 +8,26 @@ from io import BytesIO
 from core.database import get_db
 from service.report_service import ReportService
 
-router = APIRouter()
+router = APIRouter(prefix="/api/reports")
 
-@router.get("/reports/{attempt_id}/pdf", tags=["Reports"])
-def download_report(attempt_id: int, db: Session = Depends(get_db)):
 
+@router.get("/{attempt_id}/pdf", tags=["Reports"])
+def download_report(attempt_id: uuid.UUID, db: Session = Depends(get_db)):
     try:
-        pdf_bytes = ReportService.generate_report_pdf(attempt_id, db)
+        pdf_bytes = ReportService.generate_report_pdf(str(attempt_id), db)
+
+        # Create the buffer
+        buffer = BytesIO(pdf_bytes)
+        buffer.seek(0)  # <--- CRITICAL: Move cursor to the beginning of the buffer
+
         return StreamingResponse(
-            BytesIO(pdf_bytes),
+            buffer,
             media_type="application/pdf",
             headers={
-                "Content-Disposition": f"attachment; filename=assessment_report_{attempt_id}.pdf"
+                "Content-Disposition": f"attachment; filename=assessment_report_{attempt_id}.pdf",
+                "Content-Length": str(len(pdf_bytes))  # Optional: helps browser show progress
             }
         )
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Error generating report")
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

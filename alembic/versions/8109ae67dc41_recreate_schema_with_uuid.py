@@ -76,7 +76,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.UUID(), nullable=True),
     sa.Column('category_id', sa.UUID(), nullable=True),
     sa.Column('test_score', sa.Float(), nullable=True),
-    sa.Column('test_level', sa.Enum('LOW', 'MODERATE', 'HIGH', 'NORMAL', name='testlevel'), nullable=True),
+    sa.Column('test_state', sa.Text(), nullable=True),
     sa.Column('attempt_date', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['category_id'], ['test_categories.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),

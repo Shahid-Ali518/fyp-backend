@@ -1,5 +1,8 @@
-from sqlalchemy import Column, Integer, Float, Enum, ForeignKey, DateTime
+
+from sqlalchemy import Column, Integer, Float, Enum, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship
+from sympy import false
+
 from core.database import Base
 from datetime import datetime
 from models.test_level import TestLevel
@@ -13,7 +16,7 @@ class TestAttempt(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
     category_id = Column(UUID, ForeignKey("test_categories.id"))
     test_score = Column(Float, default=0.0)
-    test_level = Column(Enum(TestLevel, name="testlevel"), nullable=True)
+    test_state = Column(Text, nullable=True)
     attempt_date = Column(DateTime, default=datetime.utcnow)
 
     # relationships

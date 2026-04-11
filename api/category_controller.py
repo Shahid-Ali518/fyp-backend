@@ -21,7 +21,7 @@ def create_category(data: TestCategoryDTO, db: Session = Depends(get_db), _ = De
 
 # all categories
 @router.get("/", response_model=ApiResponse[List[TestCategoryDTO]])
-def get_all_categories(db: Session = Depends(get_db), _ = Depends(admin_only)):
+def get_all_categories(db: Session = Depends(get_db), _ = Depends(any_user)):
     try:
         return category_service.get_all_categories(db)
     except :

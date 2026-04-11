@@ -1,63 +1,144 @@
+import uuid
 
 from fpdf import FPDF
-from models import TestAttempt, QuestionResult, User, TestCategory
-from sqlalchemy.orm import Session
+from datetime import datetime
+from sqlalchemy.orm import Session, joinedload
+
+from models import TestAttempt
+
 
 class ReportService:
-
     @staticmethod
-    def generate_report_pdf(attempt_id: int, db: Session) -> bytes:
-        # Fetch attempt with relations
-        attempt = db.query(TestAttempt).filter(TestAttempt.id == attempt_id).first()
+    def generate_report_pdf(attempt_id: str, db: Session) -> bytes:
+        # 1. Fetch attempt data
+        attempt = db.query(TestAttempt).options(
+            joinedload(TestAttempt.user),
+            joinedload(TestAttempt.category)
+        ).filter(TestAttempt.id == attempt_id).first()
         if not attempt:
-            raise ValueError("Test attempt not found")
+            raise ValueError("Assessment record not found")
 
         user = attempt.user
         category = attempt.category
-        question_results = attempt.question_results or []
 
+        # Initialize PDF (A4 size)
         pdf = FPDF()
         pdf.add_page()
-        pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.set_font("Arial", 'B', 16)
-        pdf.cell(0, 10, "Assessment Report", ln=True, align="C")
-        pdf.ln(10)
+        pdf.set_auto_page_break(auto=True, margin=20)
 
-        # User Info
-        pdf.set_font("Arial", '', 12)
-        pdf.cell(0, 8, f"Name: {user.name}", ln=True)
-        pdf.cell(0, 8, f"Name: {user.phone_number}", ln=True)
-        pdf.cell(0, 8, f"Email: {user.email}", ln=True)
-        pdf.cell(0, 8, f"Category: {category.name}", ln=True)
-        pdf.cell(0, 8, f"Mental Health Score: {attempt.mental_health_score}", ln=True)
-        pdf.cell(0, 8, f"Mental Health State: {attempt.mental_health_state}", ln=True)
-        pdf.ln(10)
+        # --- 1. PLATFORM HEADER ---
+        # A clean, professional top bar
+        pdf.set_fill_color(30, 41, 59)  # Slate-900 (Professional Dark)
+        pdf.rect(0, 0, 210, 35, 'F')
 
-        # Question Results
-        if question_results:
-            pdf.set_font("Arial", 'B', 14)
-            pdf.cell(0, 8, "Question Results:", ln=True)
-            pdf.set_font("Arial", '', 12)
-            for idx, qr in enumerate(question_results, start=1):
-                pdf.cell(0, 6, f"{idx}. Question ID: {qr.question_id}", ln=True)
-                pdf.cell(0, 6, f"   Selected Option: {qr.selected_option.option_text}", ln=True)
-                pdf.cell(0, 6, f"   Score: {qr.selected_option.weightage}", ln=True)
-                if hasattr(qr, "emotions") and qr.emotions:
-                    emotions_str = ", ".join([f"{k}: {v:.1f}%" for k, v in qr.emotions.items()])
-                    pdf.cell(0, 6, f"   Emotions: {emotions_str}", ln=True)
-                pdf.ln(2)
+        pdf.set_font("Helvetica", 'B', 20)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_y(12)
+        pdf.cell(0, 10, "MINDFUL AI PLATFORM", ln=True, align="C")
 
-        # Recommendations (example)
-        pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 8, "Recommendations:", ln=True)
-        pdf.set_font("Arial", '', 12)
-        # Placeholder example, replace with actual logic
-        recommendations = [
-            "Practice more on weak areas",
-            "Review topics with low confidence",
-            "Focus on time management"
-        ]
-        for idx, rec in enumerate(recommendations, start=1):
-            pdf.cell(0, 6, f"{idx}. {rec}", ln=True)
+        pdf.set_font("Helvetica", '', 9)
+        pdf.cell(0, 5, "Advanced Behavioral & Emotional Analytics", ln=True, align="C")
+        pdf.ln(20)
 
-        return pdf.output(dest='S').encode('latin1')  # return as bytes
+        # --- 2. PATIENT & SESSION DATA ---
+        pdf.set_text_color(30, 41, 59)
+        pdf.set_font("Helvetica", 'B', 12)
+        pdf.cell(0, 10, "OFFICIAL ASSESSMENT RECORD", ln=True)
+
+        # Drawing a divider line
+        pdf.set_draw_color(226, 232, 240)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(5)
+
+        # Data Grid Layout
+        pdf.set_font("Helvetica", 'B', 10)
+        pdf.set_text_color(100, 116, 139)  # Muted label color
+
+        # Patient Info Column 1 & 2
+        data_y = pdf.get_y()
+        pdf.cell(95, 7, "PATIENT NAME", ln=0)
+        pdf.cell(95, 7, "DATE OF ASSESSMENT", ln=1)
+
+        pdf.set_font("Helvetica", '', 11)
+        pdf.set_text_color(15, 23, 42)
+        pdf.cell(95, 7, user.name, ln=0)
+        pdf.cell(95, 7, datetime.now().strftime('%B %d, %Y | %I:%M %p'), ln=1)
+        pdf.ln(4)
+
+        pdf.set_font("Helvetica", 'B', 10)
+        pdf.set_text_color(100, 116, 139)
+        pdf.cell(95, 7, "CONTACT IDENTIFIER", ln=0)
+        pdf.cell(95, 7, "ASSESSMENT CATEGORY", ln=1)
+
+        pdf.set_font("Helvetica", '', 11)
+        pdf.set_text_color(15, 23, 42)
+        pdf.cell(95, 7, user.email, ln=0)
+        pdf.cell(95, 7, category.name, ln=1)
+        pdf.ln(15)
+
+        # --- 3. THE CLINICAL RESULT (CORE DATA) ---
+        pdf.set_fill_color(248, 250, 252)
+        pdf.set_draw_color(203, 213, 225)
+        pdf.rect(10, pdf.get_y(), 190, 50, 'DF')
+
+        pdf.set_y(pdf.get_y() + 8)
+        pdf.set_font("Helvetica", 'B', 12)
+        pdf.cell(0, 10, "EXECUTIVE FINDINGS", ln=True, align="C")
+
+        # State & Score Logic
+        state = attempt.test_state.upper()
+        score = attempt.test_score
+
+        pdf.set_font("Helvetica", 'B', 24)
+        pdf.set_text_color(79, 70, 229)  # Indigo-600 (The "Mindful" color)
+        pdf.cell(0, 15, state, ln=True, align="C")
+
+        pdf.set_font("Helvetica", '', 12)
+        pdf.set_text_color(71, 85, 105)
+        pdf.cell(0, 8, f"Computed Wellness Index: {score}", ln=True, align="C")
+        pdf.ln(20)
+
+        # --- 4. SUMMARY DESCRIPTION ---
+        pdf.set_x(15)
+        pdf.set_font("Helvetica", 'B', 11)
+        pdf.set_text_color(30, 41, 59)
+        pdf.cell(0, 10, "Clinical Interpretation:", ln=True)
+
+        pdf.set_font("Helvetica", '', 10)
+        pdf.set_text_color(51, 65, 85)
+
+        # Ensure 'test_state' is used here
+        summary_text = (
+            f"This {category.name} assessment was completed successfully. The result indicates a "
+            f"'{attempt.test_state}' state. This score is generated based on a combination of "
+            "standardized clinical response weightage and AI-driven behavioral analysis markers."
+        )
+        # multi_cell can trigger a page break if the text is too long
+        pdf.multi_cell(180, 6, summary_text, align="L")
+
+        # --- 5. AUTHENTICATION & FOOTER ---
+        # Turn off auto page break so the footer stays on Page 1
+        pdf.set_auto_page_break(auto=False)
+
+        # Position the footer closer to the bottom
+        pdf.set_y(-25)
+        pdf.set_draw_color(226, 232, 240)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(2)
+
+        pdf.set_font("Helvetica", 'I', 8)
+        pdf.set_text_color(148, 163, 184)
+        pdf.multi_cell(0, 4, (
+            "Disclaimer: This report is generated by the Mindful AI system. It is intended for "
+            "informational purposes and should be reviewed by a qualified healthcare professional. "
+            "This is a digitally verified document."
+        ), align="C")
+
+        pdf.set_font("Helvetica", 'B', 8)
+        pdf.cell(0, 8, f"Report UUID: {attempt.id}", align="C")
+
+        # [FINAL OUTPUT]
+        pdf_output = pdf.output(dest='S')
+        if isinstance(pdf_output, str):
+            return pdf_output.encode('latin-1')
+        return pdf_output

@@ -50,8 +50,8 @@ def map_test_attempt_to_dto(attempt : TestAttempt) -> TestAttemptDTO:
 
     return TestAttemptDTO(
         id=attempt.id,
-        mental_health_score=attempt.mental_health_score,
-        mental_health_state=attempt.mental_health_state,
+        test_score=attempt.test_score,
+        test_state=attempt.test_state,
         user=user_dto,
         category=category_dto
 
