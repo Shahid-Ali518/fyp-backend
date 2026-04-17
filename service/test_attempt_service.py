@@ -128,66 +128,99 @@ class TestAttemptService:
         return response
 
 
-    # method to create voice based emotion detection assessment
+    # method to start the attempt that just return attempt id, only for voice based attempt
+    def start_attempt(self, user_id: uuid.UUID, category_id: uuid.UUID, db: Session):
 
-    def take_voice_based_attempt(self, user_id: uuid.UUID, attempt_id: uuid.UUID,  db: Session):
         response = ApiResponse(status_code=200, message="success")
 
         try:
+            category = db.query(TestCategory).filter(TestCategory.id == category_id).first()
 
-            existed_user = db.query(User).filter(User.id == user_id).first()
-            existed_attempt = db.query(TestAttempt).filter(TestAttempt.id == attempt_id).first()
+            if not category:
+                raise HTTPException(status_code=404, detail="Category not found")
 
-            if existed_user is None or existed_attempt is None:
-                response.message = f"User or Attempt does not exist with {user_id}"
-                response.status_code = 404
-                return response
+            attempt = TestAttempt(
+                user_id=user_id,
+                category_id=category_id,
 
-            # find test category to check whether it's depression, anxiety, stressed test
-            category_name = existed_attempt.category.name.lower()
+            )
 
-            question_results = db.query(QuestionResult).filter(QuestionResult.attempt_id == attempt_id).all()
-
-            # calculate all emotions in
-            # print(question_results)
-            all_emotions  = []
-            for qr in question_results:
-                emotion = qr.emotion_probabilities
-                all_emotions.append(emotion)
-
-            print(all_emotions)
-
-            # calculate final state and score of mental health
-
-            results = calculate_mental_health_state(all_emotions, category_name)
-
-            if results["condition"] == "None":
-                Exception("No emotions found")
-
-            elif results["condition"] == "Normal":
-                existed_attempt.mental_health_state = results["condition"]
-                existed_attempt.mental_health_score = results["mental_health_score"]
-
-            existed_attempt.mental_health_state = results["mental_health_state"]
-            existed_attempt.mental_health_score = results["mental_health_score"]
-
-            db.add(existed_attempt)
+            db.add(attempt)
+            db.flush()
             db.commit()
-            db.refresh(existed_attempt)
 
-            response.status_code = 200
-            response.message = "success"
-            response.data = map_test_attempt_to_dto(existed_attempt)
+            attempt_dto = TestAttemptDTO(
+                id=attempt.id,
+                category_id=attempt.category_id,
+                user_id=attempt.user_id
+            )
 
+            response.status_code = 201
+            response.message = "Attempt created"
+            response.data = attempt_dto
+
+            return response
 
         except Exception as e:
             print(e)
-            traceback.print_exc()
-            db.rollback()
             response.status_code = 500
             response.message = "exception occurred while creating attempt"
+            db.rollback()
+            return response
 
-        return response
+
+
+    # method to create voice based emotion detection assessment
+    @staticmethod
+    def take_voice_based_attempt(attempt_id: uuid.UUID, db: Session):
+
+        response = ApiResponse(status_code=200, message="Success")
+
+        try:
+            # 1. fetch attempt information
+            attempt = db.query(TestAttempt).options(
+                joinedload(TestAttempt.category),
+                joinedload(TestAttempt.question_results)
+            ).filter(TestAttempt.id == attempt_id).first()
+
+            if not attempt:
+                return ApiResponse(status_code=404, message="Assessment session not found")
+
+            # 2. Validation: Ensure there is data to process
+            if not attempt.question_results:
+                return ApiResponse(status_code=400, message="No voice data results found for this session")
+
+            # 3. Data Aggregation
+            all_emotions = [qr.emotion_probabilities for qr in attempt.question_results if qr.emotion_probabilities]
+
+            if not all_emotions:
+                raise ValueError("Emotion probability data is missing from question results")
+
+            # 4. Calculation Logic (Externalized Service)
+            # We pass the category name for specialized clinical logic (e.g. Depression vs Anxiety)
+            analysis = calculate_mental_health_state(all_emotions, attempt.category.name.lower())
+
+            # 5. Update
+            # Using consistent field names (test_state and test_score)
+            attempt.test_state = analysis.get("condition", "Unknown")
+            attempt.test_score = analysis.get("mental_health_score", 0)
+            # Store a timestamp of when the AI finished processing
+            attempt.completed_at = datetime.now()
+
+            db.commit()
+            db.refresh(attempt)
+
+            response.data = map_test_attempt_to_dto(attempt)
+            return response
+
+        except ValueError as ve:
+            db.rollback()
+            return ApiResponse(status_code=422, message=str(ve))
+        except Exception as e:
+            print(e)
+            db.rollback()
+            traceback.print_exc()
+            return ApiResponse(status_code=500, message="Internal processing error")
 
 
     # method to cancel the attempt

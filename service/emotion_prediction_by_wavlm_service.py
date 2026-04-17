@@ -68,6 +68,7 @@ class EmotionPredictionByWavLmService():
 
         except Exception as e:
             self.db.rollback()
+            print(e)
             response.status_code = 500
             response.message = "Exception Occurred while emotion prediction of question"
             raise e

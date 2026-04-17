@@ -8,13 +8,13 @@ from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-router = APIRouter(prefix="/emotions")
+router = APIRouter(prefix="/api/emotions")
 
 # route to detect emotion of a question
 @router.post("/predict-emotion", response_model=ApiResponse)
 async def predict_question(
-        attempt_id: int = Form(...),
-        question_id: int = Form(...),
+        attempt_id: uuid.UUID = Form(...),
+        question_id: uuid.UUID = Form(...),
         file: UploadFile = File(...),
         db: Session = Depends(get_db)
 ):
