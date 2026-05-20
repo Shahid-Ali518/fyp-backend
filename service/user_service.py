@@ -132,8 +132,8 @@ class UserService:
        try:
            # fetch user's details by using join and afterward sort them by date
            user = db.query(User) \
-               .join(User.test_attempts) \
-               .options(contains_eager(User.test_attempts)) \
+               .join(User.attempts) \
+               .options(contains_eager(User.attempts)) \
                .filter(User.id == user_id) \
                .order_by(TestAttempt.attempt_date.desc()) \
                .first()
@@ -145,7 +145,7 @@ class UserService:
                    raise HTTPException(status_code=404, detail="User not found")
 
            # map to dtos
-           data = map_user_with_history_to_dto(user, user.test_attempts)
+           data = map_user_with_history_to_dto(user, user.attempts)
 
            return ApiResponse(
                message="User profile fetched with most recent attempts first",

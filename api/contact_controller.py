@@ -35,7 +35,7 @@ async def send_contact_email(request: ContactRequest):
         msg['Subject'] = f"New Contact Form Submission from {request.firstName} {request.lastName}"
 
         body = f"""
-        New message received from EmotiCare Contact Form:
+        New message received from MindFulAI Contact Form:
         
         Name: {request.firstName} {request.lastName}
         Email: {request.email}

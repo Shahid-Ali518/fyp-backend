@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from core.database import get_db
-from core.role_checker import admin_only
+from core.role_checker import admin_only, any_user, user_only
 from schemas.api_response import ApiResponse
 from schemas.user_schema import UserDTO
 from service.user_service import user_service
@@ -35,6 +35,15 @@ async def get_logged_in_profile_info(current_user: User = Depends(get_current_us
         "role": current_user.role.value
     }
 
+@router.get("/profile-history")
+async def get_profile_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _ = Depends(user_only)
+):
+    return user_service.get_user_profile_history(db, current_user.id)
+
+
 @router.get("/{user_id}", response_model=ApiResponse[UserDTO])
 async def get_user_by_id(
     user_id: uuid.UUID,
@@ -53,12 +62,6 @@ async def update_profile(
     # Pass just the name string as your service expects
     return user_service.update_user_profile(db, current_user.id, update_data.name)
 
-@router.get("/profile-history")
-async def get_profile_history(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    return user_service.get_user_profile_history(db, current_user.id)
 
 @router.delete("/{user_id}")
 async def delete_user(

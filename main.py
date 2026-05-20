@@ -14,6 +14,7 @@ from api.survey_options_controller import router as survey_options_router
 from api.assessment_class_range_controller import router as assessment_class_range_router
 from api.report_controller import router as report_router
 from api.emotion_detection_controller import router as emotion_detection_router
+from api.interview_controller import router as interview_router
 
 app = FastAPI()
 
@@ -55,3 +56,4 @@ app.include_router(assessment_class_range_router)
 app.include_router(test_attempt_router)
 app.include_router(emotion_detection_router)
 app.include_router(report_router)
+app.include_router(interview_router)
